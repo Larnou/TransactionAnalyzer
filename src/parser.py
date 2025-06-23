@@ -22,6 +22,7 @@ def read_file_from_csv(filename: str, home_directiry: str = None) -> list[dict]:
     Чтение csv-файла и его псоледущее преобразование в список словарей с ключами колонками исходного файла.
     Args:
         filename: Путь до загружаемого файла
+        home_directiry: Директория хранения файлов
 
     Returns: Список словарей с ключами названиями колонок csv-файла.
     """
@@ -58,19 +59,23 @@ def read_file_from_csv(filename: str, home_directiry: str = None) -> list[dict]:
     return xlsx_operations
 
 
-def read_file_from_xlsx(filename: str, home_directiry: str = 'data') -> list[dict]:
+def read_file_from_xlsx(filename: str, home_directiry: str = None) -> list[dict]:
     """
     Чтение xlsx-файла и его псоледущее преобразование в список словарей с ключами колонками исходного файла.
     Args:
         filename: Путь до загружаемого файла
+        home_directiry: Директория хранения файлов
 
     Returns: Список словарей с ключами названиями колонок xlsx-файла.
     """
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DATA_PATH = os.path.join(BASE_DIR, home_directiry, f"{filename}")
+    if home_directiry is None:
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        DATA_PATH = os.path.join(BASE_DIR, "data", filename)
+    else:
+        DATA_PATH = os.path.join(home_directiry, filename)
 
     # Читаем как строку для последующей обработки
-    xlsx_data = pd.read_excel(DATA_PATH, engine='openpyxl', dtype={'Дата операции': str})
+    xlsx_data = pd.read_excel(DATA_PATH, engine='openpyxl', dtype={'Дата операции': str}, sheet_name=0)
     xlsx_data = xlsx_data.dropna(how="all")
 
     # Альтернативный вариант с pandas (если все даты в одном формате)
