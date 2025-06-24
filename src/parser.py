@@ -105,7 +105,7 @@ def read_file_from_xlsx(filename: str, home_directiry: str = None) -> list[dict]
     return xlsx_operations
 
 
-def print_json(data: list[dict[str, Any]]):
+def print_json(data: list[dict[str, Any]] | dict[str, Any]):
     """
     Печатает данные в виде подсвеченного JSON с обработкой дат
     Args:
@@ -134,3 +134,32 @@ def print_json(data: list[dict[str, Any]]):
         default=str  # Дополнительная страховка
     )
     print(highlight(json_str, JsonLexer(), TerminalFormatter()))
+
+
+def read_file_from_json(filename: str, home_directiry: str = None) -> list[Any] | Any:
+    """
+    Чтение xlsx-файла и его псоледущее преобразование в список словарей с ключами колонками исходного файла.
+    Args:
+        filename: Путь до загружаемого файла
+        home_directiry: Директория хранения файлов
+
+    Returns: Список словарей с ключами названиями колонок xlsx-файла.
+    """
+    """
+    Чтение файла формата JSON.
+    :param filename: Путь до файла.
+    :return: Данные файла JSON или пустой список, если произошла ошибка чтения.
+    """
+    if home_directiry is None:
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        DATA_PATH = os.path.join(BASE_DIR, "data", filename)
+    else:
+        DATA_PATH = os.path.join(home_directiry, filename)
+
+    try:
+        with open(DATA_PATH, encoding="utf8") as f:
+            data = json.load(f)
+
+        return data
+    except (FileNotFoundError, json.JSONDecodeError, UnicodeDecodeError, PermissionError, IsADirectoryError):
+        return []
