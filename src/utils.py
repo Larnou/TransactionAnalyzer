@@ -3,7 +3,7 @@ import math
 import os
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from typing import Any
 
 import numpy as np
@@ -41,8 +41,8 @@ def get_transaction_history(transaction_data: list[dict], period_end: str) -> li
     Returns: Список транзакций.
     """
 
-    period_end_date = datetime.strptime(period_end, "%d.%m.%Y")
-    period_start_date = period_end_date.replace(day=1)
+    period_end_date = datetime.strptime(period_end, "%d.%m.%Y %H:%M:%S")
+    period_start_date = period_end_date.replace(day=1, hour=0, minute=0, second=0)
     period = {'start': period_start_date, 'end': period_end_date}
 
     # Фильтруем операции, где описание соответствует шаблону period
@@ -148,13 +148,14 @@ def get_top_transactions(transaction_data: list[dict[str, Any]]) -> list[dict[st
 
     Returns: Список, содержащий в себе информациюю о транзакции.
     """
-    sorted_transactions = sorted(transaction_data, key=lambda x: x.get("Сумма операции", 0), reverse=True)
-    top_sorted_transactions = 5 if len(sorted_transactions) >= 5 else len(sorted_transactions)
+    sorted_transactions = sorted(transaction_data, key=lambda x: x.get("Сумма операции", 0), reverse=False)
+    top_sorted_transactions = sorted_transactions[:5] if len(sorted_transactions) >= 5 else sorted_transactions
+
 
     top_sorted_transactions_info = []
-    for transaction in sorted_transactions[:top_sorted_transactions]:
-        date = transaction.get("Дата платежа")
-        amount = transaction.get("Сумма операции")
+    for transaction in top_sorted_transactions:
+        date = datetime.strftime(transaction.get("Дата платежа"), "%d.%m.%Y")
+        amount = -transaction.get("Сумма операции")
         category = transaction.get("Категория")
         description = transaction.get("Описание")
 
@@ -262,3 +263,207 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
         stocks_info.append(stock_info)
 
     return stocks_info
+
+# Функции для блока заданий "Событие"
+
+def get_date_range(period_end: str, range_type) -> dict[str, datetime | date]:
+    """
+    Возвращает диапазон дат на основе входной даты и типа диапазона.
+
+    Args:
+        param period_end: Строка с датой в формате 'dd.mm.YYYY HH:MM:SS'
+        param range_type: Тип диапазона ('W', 'M', 'Y', 'ALL'). По умолчанию 'M'.
+
+    Returns: Словарь (начало_диапазона, конец_диапазона) в формате 'dd.mm.YYYY'
+    """
+
+    period_end_date = datetime.strptime(period_end, "%d.%m.%Y %H:%M:%S")
+
+    if range_type == 'W':  # Неделя
+        start = period_end_date - timedelta(days=period_end_date.weekday())
+        start = start.replace(hour=0, minute=0, second=0)
+        end = period_end_date
+    elif range_type == 'M':  # Месяц
+        start = period_end_date.replace(day=1, hour=0, minute=0, second=0)
+        end = period_end_date
+    elif range_type == 'Y':  # Год
+        start = period_end_date.replace(month=1, day=1, hour=0, minute=0, second=0)
+        end = period_end_date
+    elif range_type == 'ALL':  # Вся история
+        start = datetime.min.date()
+        end = period_end_date
+    else:  # Неизвестный тип -> используем месяц по умолчанию
+        start = period_end_date.replace(day=1)
+        end = period_end_date
+
+    return {'start': start, 'end': end}
+
+
+def get_transaction_history_ranged(transaction_data: list[dict], period_end: str, range_type) -> list[dict[str, Any]]:
+    """
+    Получение списка транзакций по заданному ограничению по времени. Период строится следующим образом:
+    Если дата — 20.05.2020, то данные для анализа будут в диапазоне 01.05.2020-20.05.2020.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+        period_end: Время до которого с начала месяца берётся информация о транзакциях.
+        range_type: Диапазон дат.
+
+    Returns: Список транзакций.
+    """
+
+    period = get_date_range(period_end, range_type)
+
+    # Фильтруем операции, где описание соответствует шаблону period
+    transaction_history = [
+        operation for operation in transaction_data
+        if period["start"] <= operation["Дата операции"] <= period["end"]
+    ]
+
+    return transaction_history
+
+
+def get_total_expenses_amount(transaction_history: list[dict[str, Any]]) -> int:
+    """
+    Получение общего значения расходов за указанный список транзакций.
+    Args:
+        transaction_history: Полный набор данных по транзакциям.
+
+    Returns: Сумма расходов.
+    """
+    total_amount = sum(
+        [
+            -operation.get('Сумма операции') for operation in transaction_history
+            if operation.get('Сумма операции') < 0
+        ]
+    )
+
+    return int(round(total_amount, 0))
+
+
+def get_total_income_amount(transaction_history: list[dict[str, Any]]) -> int:
+    """
+    Получение общего значения пополнений за указанный список транзакций.
+    Args:
+        transaction_history: Полный набор данных по транзакциям.
+
+    Returns: Сумма пополнений.
+    """
+    total_amount = sum(
+        [
+            operation.get('Сумма операции') for operation in transaction_history
+            if operation.get('Сумма операции') > 0
+        ]
+    )
+
+    return int(round(total_amount, 0))
+
+
+def get_categories(transaction_data: list[dict]):
+    """
+    Получение списка категорий, с которых выполнялись платежи.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+
+    Returns: Список категорий.
+    """
+    not_in_categories_list = ["Наличные", "Переводы", "Пополнения", "Бонусы"]
+    categories = [
+        operation.get("Категория") for operation in transaction_data
+        if operation.get("Категория") not in not_in_categories_list
+    ]
+
+    # Необходимо исключить NaN значения, однако Nan != Nan
+    return set([category for category in categories if category == category])
+
+
+def get_amount_by_category(transaction_data: list[dict], category: str, amount_type: str = "expense") -> dict[str, str | int]:
+    """
+    Получение сумм расходов по категории category из списка transaction_data.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+        category: Категория по которой считаются общие расходы.
+
+    Returns: СЛоварь в виде {"category": название категории, "amount": расходы по категории}
+    """
+    expenses_by_category = sum(
+        [
+            operation.get('Сумма операции') for operation in transaction_data
+            if operation.get("Категория") == category
+        ]
+    )
+
+    amount = -int(round(expenses_by_category, 0)) if amount_type == "expense" else int(round(expenses_by_category, 0))
+
+    return {"category": category, "amount": amount}
+
+
+def get_expenses_by_top_categories(transaction_data: list[dict], categories: list[str]) -> list[dict[str, Any]]:
+    """
+    Получение сумм расходов по 7 категориям с самыми большими тратами.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+        categories: Список категорий расходов.
+
+    Returns: Словарь с информацией о категории и сумме трат по ней.
+    """
+
+    # Получение списка трат по ВСЕМ категориямп
+    categories_expenses = []
+    for category in categories:
+        expenses_by_category = get_amount_by_category(transaction_data, category)
+        categories_expenses.append(expenses_by_category)
+
+    # Сортировка категорий по суммам трат
+    sorted_categories = sorted(categories_expenses, key=lambda x: x.get("amount", 0), reverse=True)
+    # Получение списка 7 категорий с самымим большими тратами
+    top_categories = sorted_categories[:7] if len(sorted_categories) >= 7 else sorted_categories
+    # Получение списка антитопа (остальные категории)
+    antitop_categories = sorted_categories[7:] if len(sorted_categories) > 7 else []
+    # Получение общей суммы трат по категориям из "остальное"
+    antitop_categories_expenses = sum([antitop_category.get("amount") for antitop_category in antitop_categories])
+
+    expenses_by_top_categories = []
+    for top_category in top_categories:
+        expenses_by_top_categories.append(top_category)
+
+    if len(sorted_categories) > 7:
+        expenses_by_top_categories.append({"category": "Остальное", "amount": antitop_categories_expenses})
+
+    return expenses_by_top_categories
+
+
+def get_transfers_and_cash(transaction_data: list[dict]):
+    """
+    Получение сумм расходов по переводам и пополнениям с убванием по сумме.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+
+    Returns: Словарь с информацией о категории и сумме трат по ней.
+    """
+    transfers = get_amount_by_category(transaction_data, "Переводы")
+    cash = get_amount_by_category(transaction_data, "Наличные")
+
+    sorted_transfers_and_cash = sorted([transfers, cash], key=lambda x: x.get("amount", 0), reverse=True)
+
+    return sorted_transfers_and_cash
+
+
+def get_income_categories(transaction_data: list[dict], categories: list[str]):
+    """
+    Получение сумм поступлений по категориям с убванием по сумме.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+        categories: Категории поступлений
+
+    Returns: Словарь с информацией о категории и сумме пополнений по ней.
+    """
+    categories_income = []
+    for category in categories:
+        expenses_by_category = get_amount_by_category(transaction_data, category, amount_type = "income")
+        categories_income.append(expenses_by_category)
+
+    sorted_categories = sorted(categories_income, key=lambda x: x.get("amount", 0), reverse=True)
+
+    return sorted_categories
+
+

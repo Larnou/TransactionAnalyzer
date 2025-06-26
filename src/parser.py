@@ -105,7 +105,7 @@ def read_file_from_xlsx(filename: str, home_directiry: str = None) -> list[dict]
     return xlsx_operations
 
 
-def print_json(data: list[dict[str, Any]] | dict[str, Any]):
+def print_json(data: list[dict[str, Any]] | dict[str, Any] | str):
     """
     Печатает данные в виде подсвеченного JSON с обработкой дат
     Args:
@@ -123,17 +123,30 @@ def print_json(data: list[dict[str, Any]] | dict[str, Any]):
         else:
             return obj
 
-    # Преобразуем все даты в данных
-    converted_data = convert_datetime(data)
+    if type(data) is str:
+        json_str = json.loads(data)
 
-    # Сериализуем и печатаем
-    json_str = json.dumps(
-        converted_data,
-        indent=4,
-        ensure_ascii=False,
-        default=str  # Дополнительная страховка
-    )
-    print(highlight(json_str, JsonLexer(), TerminalFormatter()))
+        # Сериализуем и печатаем
+        json_dict = json.dumps(
+            json_str,
+            indent=4,
+            ensure_ascii=False,
+            default=str  # Дополнительная страховка
+        )
+        print(highlight(json_dict, JsonLexer(), TerminalFormatter()))
+
+    else:
+        # Преобразуем все даты в данных
+        converted_data = convert_datetime(data)
+
+        # Сериализуем и печатаем
+        json_str = json.dumps(
+            converted_data,
+            indent=4,
+            ensure_ascii=False,
+            default=str  # Дополнительная страховка
+        )
+        print(highlight(json_str, JsonLexer(), TerminalFormatter()))
 
 
 def read_file_from_json(filename: str, home_directiry: str = None) -> list[Any] | Any:
