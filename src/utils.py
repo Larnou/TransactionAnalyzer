@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import requests
 from dotenv import load_dotenv
+from pandas import DataFrame
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
@@ -30,7 +31,7 @@ def get_welcome_words():
     return welcome_words[int(current_hour / 6)]
 
 
-def get_transaction_history(transaction_data: list[dict], period_end: str) -> list[dict[str, Any]]:
+def get_transaction_history(transaction_data: DataFrame, period_end: str) -> list[dict[str, Any]]:
     """
     Получение списка транзакций по заданному ограничению по времени. Период строится следующим образом:
     Если дата — 20.05.2020, то данные для анализа будут в диапазоне 01.05.2020-20.05.2020.
@@ -45,9 +46,10 @@ def get_transaction_history(transaction_data: list[dict], period_end: str) -> li
     period_start_date = period_end_date.replace(day=1, hour=0, minute=0, second=0)
     period = {'start': period_start_date, 'end': period_end_date}
 
+    operations = transaction_data.to_dict("records")
     # Фильтруем операции, где описание соответствует шаблону period
     transaction_history = [
-        operation for operation in transaction_data
+        operation for operation in operations
         if period["start"] <= operation["Дата операции"] <= period["end"]
     ]
 
@@ -299,7 +301,7 @@ def get_date_range(period_end: str, range_type) -> dict[str, datetime | date]:
     return {'start': start, 'end': end}
 
 
-def get_transaction_history_ranged(transaction_data: list[dict], period_end: str, range_type) -> list[dict[str, Any]]:
+def get_transaction_history_ranged(transaction_data: DataFrame, period_end: str, range_type) -> list[dict[str, Any]]:
     """
     Получение списка транзакций по заданному ограничению по времени. Период строится следующим образом:
     Если дата — 20.05.2020, то данные для анализа будут в диапазоне 01.05.2020-20.05.2020.
@@ -312,10 +314,10 @@ def get_transaction_history_ranged(transaction_data: list[dict], period_end: str
     """
 
     period = get_date_range(period_end, range_type)
-
+    operations = transaction_data.to_dict("records")
     # Фильтруем операции, где описание соответствует шаблону period
     transaction_history = [
-        operation for operation in transaction_data
+        operation for operation in operations
         if period["start"] <= operation["Дата операции"] <= period["end"]
     ]
 

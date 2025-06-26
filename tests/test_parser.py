@@ -21,7 +21,7 @@ def test_csv_valid(tmp_path, file_valid_data):
     result = read_file_from_csv("test.csv", home_directiry=str(tmp_path))
 
     assert len(result) == len(file_valid_data)
-    assert result[0]['Сумма'] == 100
+    assert result.iloc[0]['Сумма'] == 100
 
 def test_csv_missing_file(tmp_path):
     with pytest.raises(FileNotFoundError):
@@ -34,7 +34,8 @@ def test_csv_different_date_formats(tmp_path, file_different_dates_formats):
     result = read_file_from_csv("dates.csv", home_directiry=str(tmp_path))
 
     # Проверяем что все даты либо преобразованы, либо None
-    for i, item in enumerate(result):
+
+    for i, item in result.iterrows():
         if i == 0:
             assert isinstance(item['Дата операции'], datetime)
             assert item['Дата операции'].day == 1
@@ -56,7 +57,7 @@ def test_xlsx_valid(tmp_path, file_valid_data):
     result = read_file_from_xlsx("test.xlsx", home_directiry=str(tmp_path))
 
     assert len(result) == len(file_valid_data)
-    assert result[0]['Сумма'] == 100
+    assert result.iloc[0]['Сумма'] == 100
 
 
 def test_xlsx_date_edge_cases(tmp_path, file_different_dates):
@@ -66,14 +67,14 @@ def test_xlsx_date_edge_cases(tmp_path, file_different_dates):
     result = read_file_from_xlsx("edge_dates.xlsx", home_directiry=str(tmp_path))
 
     # Проверяем корректные даты
-    assert result[0]['Дата операции'].strftime("%d.%m.%Y %H:%M:%S") == "31.12.2023 23:59:59"
-    assert result[1]['Дата операции'].strftime("%d.%m.%Y %H:%M:%S") == "01.01.2023 00:00:00"
-    assert result[2]['Дата операции'].year == 2024
-    assert result[2]['Дата операции'].month == 2
-    assert result[2]['Дата операции'].day == 29
+    assert result.iloc[0]['Дата операции'].strftime("%d.%m.%Y %H:%M:%S") == "31.12.2023 23:59:59"
+    assert result.iloc[1]['Дата операции'].strftime("%d.%m.%Y %H:%M:%S") == "01.01.2023 00:00:00"
+    assert result.iloc[2]['Дата операции'].year == 2024
+    assert result.iloc[2]['Дата операции'].month == 2
+    assert result.iloc[2]['Дата операции'].day == 29
 
     # Проверяем невалидную дату
-    assert result[4]['Дата операции'] is None
+    assert result.iloc[4]['Дата операции'] is None
 
 def test_xlsx_missing_file(tmp_path):
     with pytest.raises(FileNotFoundError):
@@ -87,7 +88,7 @@ def test_xlsx_different_date_formats(tmp_path, file_different_dates_formats):
     result = read_file_from_xlsx("dates.xlsx", home_directiry=str(tmp_path))
 
     # Проверяем что все даты либо преобразованы, либо None
-    for i, item in enumerate(result):
+    for i, item in result.iterrows():
         if i == 0:
             assert isinstance(item['Дата операции'], datetime)
             assert item['Дата операции'].day == 1

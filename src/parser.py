@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
@@ -21,7 +22,7 @@ from pygments.lexers import JsonLexer
 #     '%Y%m%d%H%M%S',  # 20230515143000
 # ]
 
-def read_file_from_csv(filename: str, home_directiry: str = None) -> list[dict]:
+def read_file_from_csv(filename: str, home_directiry: str = None) -> DataFrame:
     """
     Чтение csv-файла и его псоледущее преобразование в список словарей с ключами колонками исходного файла.
     Args:
@@ -59,11 +60,11 @@ def read_file_from_csv(filename: str, home_directiry: str = None) -> list[dict]:
     csv_data['Дата операции'] = csv_data['Дата операции'].replace({np.nan: None})
     csv_data['Дата платежа']  = csv_data['Дата платежа'].replace({np.nan: None})
 
-    xlsx_operations = csv_data.to_dict("records")
-    return xlsx_operations
+    # xlsx_operations = csv_data.to_dict("records")
+    return csv_data
 
 
-def read_file_from_xlsx(filename: str, home_directiry: str = None) -> list[dict]:
+def read_file_from_xlsx(filename: str, home_directiry: str = None) -> DataFrame:
     """
     Чтение xlsx-файла и его псоледущее преобразование в список словарей с ключами колонками исходного файла.
     Args:
@@ -101,8 +102,8 @@ def read_file_from_xlsx(filename: str, home_directiry: str = None) -> list[dict]
     xlsx_data['Дата операции'] = xlsx_data['Дата операции'].replace({np.nan: None})
     xlsx_data['Дата платежа']  = xlsx_data['Дата платежа'].replace({np.nan: None})
 
-    xlsx_operations = xlsx_data.to_dict("records")
-    return xlsx_operations
+    # xlsx_operations = xlsx_data.to_dict("records")
+    return xlsx_data
 
 
 def print_json(data: list[dict[str, Any]] | dict[str, Any] | str):

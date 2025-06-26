@@ -16,6 +16,8 @@ YYYY-MM-DD HH:MM:SS и возвращающую JSON-ответ со следу�
 import json
 from typing import Any
 
+from pandas import DataFrame
+
 from src.parser import print_json, read_file_from_xlsx, read_file_from_json
 from src.utils import get_welcome_words, get_transaction_history, get_card_numbers, get_cards_transactions_info, \
     get_top_transactions, get_currency_rates, get_stock_prices, get_transaction_history_ranged, \
@@ -24,7 +26,7 @@ from src.utils import get_welcome_words, get_transaction_history, get_card_numbe
     get_income_categories
 
 
-def main_view(transaction_data: list[dict], user_data: dict[str, Any], period_end: str, ) -> str:
+def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end: str, ) -> str:
     """
     Возвращает информацию по общим тратам, по каждой карте: последние 4 цифры карты; общая сумма расходов;
     кешбэк (1 рубль на каждые 100 рублей), топ-5 транзакций по сумме платежа, курс валют, стоимость акций из S&P500.
@@ -80,7 +82,7 @@ date_period = '11.10.2021 11:25:59'
 # Y — год, на который приходится дата;
 # ALL — все данные до указанной даты.
 
-def main_event(transaction_data: list[dict], user_data: dict[str, Any], period_end: str, range_type: str = "M") -> str:
+def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_end: str, range_type: str = "M") -> str:
     """
     Возвращает информацию по общим тратам, по категориям, информацию о поступлениях по категориям, курс валют,
     стоимость акций из S&P500.
