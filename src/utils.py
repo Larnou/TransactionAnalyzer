@@ -4,6 +4,7 @@ import os
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta, date
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
 import numpy as np
@@ -111,12 +112,13 @@ def get_card_transactions_info(card_transactions: list[dict[str, Any]], card_num
     #     ]
     # )
 
-    total_cashback = round(total_spent / 100, 2)
+    total_cashback = Decimal(str(total_spent / 100)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    total_spent = Decimal(str(total_spent)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     card_total_info = {
         "last_digits": card_number,
-        "total_spent": round(total_spent, 2),
-        "cashback": round(total_cashback, 2),
+        "total_spent": float(total_spent),
+        "cashback": float(total_cashback),
     }
 
     return card_total_info
@@ -192,10 +194,11 @@ def get_currency_rates(currency_list: list[str]) -> list[dict[str, Any]]:
     currencies_info = []
     for currency in currency_list:
         currency_rate = data['cbrf']['data'][0][data['cbrf']['columns'].index(f'CBRF_{currency}_LAST')]
+        decimal_rate = Decimal(str(currency_rate)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
         currency_info = {
             "currency": currency,
-            "rate": round(currency_rate, 2)
+            "rate": float(decimal_rate)
         }
 
         currencies_info.append(currency_info)
@@ -249,8 +252,8 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
 
     # Из-за ограничения кол-ва запросов 25 в день, функция будет возвращать временную заглушку.
     # Для правильной отработки файла необходимо будет закомментировать следующие 2 строки:
-    stocks_info = [{"stock": "AAPL", "price": 150.12}, {"stock": "AMZN", "price": 3173.18}]
-    return stocks_info
+    # stocks_info = [{"stock": "AAPL", "price": 150.12}, {"stock": "AMZN", "price": 3173.18}]
+    # return stocks_info
 
     # Получение словаря со значениями курса акций
     usd_rate = get_usd_rate()
@@ -260,10 +263,11 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
         response = requests.get(url)
         data = response.json()
         stock_price = float(data['Global Quote']['05. price'])
+        decimal_rate = Decimal(str(stock_price * usd_rate)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
         stock_info = {
             "stock": stock,
-            "price": round(stock_price * usd_rate, 2)
+            "price": float(decimal_rate)
         }
 
         stocks_info.append(stock_info)
@@ -299,7 +303,7 @@ def get_date_range(period_end: str, range_type) -> dict[str, datetime | date]:
         start = datetime.min.date()
         end = period_end_date
     else:  # Неизвестный тип -> используем месяц по умолчанию
-        start = period_end_date.replace(day=1)
+        start = period_end_date.replace(day=1, hour=0, minute=0, second=0)
         end = period_end_date
 
     return {'start': start, 'end': end}

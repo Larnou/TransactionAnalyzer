@@ -1,14 +1,14 @@
 import json
 import math
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from src.utils import get_welcome_words, get_transaction_history, get_card_numbers, get_transactions_by_card_number, \
-    get_card_transactions_info, get_top_transactions
+    get_card_transactions_info, get_top_transactions, get_currency_rates, get_usd_rate, get_stock_prices, get_date_range
 
 
 # Параметризованный тест для всех случаев
@@ -575,3 +575,305 @@ def test_get_top_transactions_large_dataset():
     assert [t["amount"] for t in result] == [1000, 999, 998, 997, 996]
 
 
+def test_get_currency_rates_successful_response(mock_requests_get):
+    """
+    Тест успешного получения курсов валют
+    """
+    # Настраиваем мок
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        'cbrf': {
+            'columns': ['CBRF_USD_LAST', 'CBRF_EUR_LAST'],
+            'data': [
+                [75.1234, 85.6789]
+            ]
+        }
+    }
+    mock_requests_get.return_value = mock_response
+
+    # Вызываем тестируемую функцию
+    result = get_currency_rates(['USD', 'EUR'])
+
+    # Проверяем результаты
+    assert len(result) == 2
+    assert result[0]['currency'] == 'USD'
+    assert result[0]['rate'] == 75.12
+    assert result[1]['currency'] == 'EUR'
+    assert result[1]['rate'] == 85.68
+
+    # Проверяем вызов запроса
+    mock_requests_get.assert_called_once_with(
+        "https://iss.moex.com/iss/statistics/engines/currency/markets/selt/rates.json?iss.meta=off"
+    )
+
+
+def test_get_currency_rates_empty_currency_list(mock_requests_get):
+    """
+    Тест пустого списка валют
+    """
+    result = get_currency_rates([])
+    assert result == []
+    mock_requests_get.assert_called()
+
+
+def test_get_currency_rates_rounding_logic(mock_requests_get):
+    """
+    Тест правильности округления
+    """
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        'cbrf': {
+            'columns': ['CBRF_USD_LAST', 'CBRF_EUR_LAST'],
+            'data': [
+                [75.125, 85.674]  # Проверка округления
+            ]
+        }
+    }
+    mock_requests_get.return_value = mock_response
+
+    result = get_currency_rates(['USD', 'EUR'])
+    assert result[0]['rate'] == 75.13  # 75.125 → 75.13
+    assert result[1]['rate'] == 85.67  # 85.674 → 85.67
+
+
+def test_get_usd_rate(mock_requests_get):
+    """
+    Тест успешного получения курсов валют
+    """
+    # Настраиваем мок
+    mock_response = MagicMock()
+    mock_response.json.return_value = {
+        'cbrf': {
+            'columns': ['CBRF_USD_LAST'],
+            'data': [
+                [75.1234]
+            ]
+        }
+    }
+    mock_requests_get.return_value = mock_response
+
+    # Вызываем тестируемую функцию
+    result = get_usd_rate()
+
+    # Проверяем результаты
+    assert result == 75.1234
+
+    # Проверяем вызов запроса
+    mock_requests_get.assert_called_once_with(
+        "https://iss.moex.com/iss/statistics/engines/currency/markets/selt/rates.json?iss.meta=off"
+    )
+
+
+def test_get_stock_prices_successful_response(
+        mock_load_dotenv,
+        mock_os_getenv,
+        mock_get_usd_rate,
+        mock_requests_get):
+    """
+    Тест успешного получения цен акций
+    """
+    # Настраиваем моки
+    mock_os_getenv.return_value = "test_api_key"
+    mock_get_usd_rate.return_value = 75.0
+
+    # Создаем мокированные ответы для разных акций
+    mock_responses = [
+        MagicMock(json=lambda: {'Global Quote': {'05. price': '150.00'}}),
+        MagicMock(json=lambda: {'Global Quote': {'05. price': '3200.00'}})
+    ]
+    mock_requests_get.side_effect = mock_responses
+
+    # Вызываем функцию
+    result = get_stock_prices(["AAPL", "AMZN"])
+
+    # Проверяем результаты
+    assert len(result) == 2
+    assert result[0] == {"stock": "AAPL", "price": 11250.0}  # 150.00 * 75.0
+    assert result[1] == {"stock": "AMZN", "price": 240000.0}  # 3200.00 * 75.0
+
+    # Проверяем вызовы API
+    assert mock_requests_get.call_count == 2
+    mock_requests_get.assert_any_call(
+        "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AAPL&apikey=test_api_key"
+    )
+    mock_requests_get.assert_any_call(
+        "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=AMZN&apikey=test_api_key"
+    )
+
+
+def test_get_stock_prices_empty_stock_list(
+        mock_load_dotenv,
+        mock_os_getenv,
+        mock_get_usd_rate,
+        mock_requests_get
+):
+    """
+    Тест пустого списка акций
+    """
+    result = get_stock_prices([])
+    assert result == []
+    mock_requests_get.assert_not_called()
+
+
+def test_get_stock_prices_rounding_logic(
+        mock_load_dotenv,
+        mock_os_getenv,
+        mock_get_usd_rate,
+        mock_requests_get
+):
+    """
+    Тест правильности округления цен
+    """
+    mock_os_getenv.return_value = "test_api_key"
+    mock_get_usd_rate.return_value = 75.1234
+    mock_requests_get.return_value = MagicMock(
+        json=lambda: {'Global Quote': {'05. price': '100.5678'}}
+    )
+
+    result = get_stock_prices(["TEST"])
+    assert result[0]["price"] == 7555.0  # 100.5678 * 75.1234 = 7558.52
+
+
+def test_get_date_range_week():
+    """Тест расчета недельного диапазона"""
+    result = get_date_range("15.05.2023 14:30:00", "W")
+
+    # Ожидаем понедельник 15.05.2023 (понедельник)
+    expected_start = datetime(2023, 5, 15, 0, 0, 0)
+    expected_end = datetime(2023, 5, 15, 14, 30, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_week_wednesday():
+    """Тест недельного диапазона для среды"""
+    result = get_date_range("17.05.2023 10:15:00", "W")
+
+    # Ожидаем понедельник 15.05.2023
+    expected_start = datetime(2023, 5, 15, 0, 0, 0)
+    expected_end = datetime(2023, 5, 17, 10, 15, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_month():
+    """Тест расчета месячного диапазона"""
+    result = get_date_range("15.05.2023 14:30:00", "M")
+
+    expected_start = datetime(2023, 5, 1, 0, 0, 0)
+    expected_end = datetime(2023, 5, 15, 14, 30, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_year():
+    """Тест расчета годового диапазона"""
+    result = get_date_range("15.05.2023 14:30:00", "Y")
+
+    expected_start = datetime(2023, 1, 1, 0, 0, 0)
+    expected_end = datetime(2023, 5, 15, 14, 30, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_all_history():
+    """Тест диапазона 'вся история'"""
+    result = get_date_range("15.05.2023 14:30:00", "ALL")
+
+    expected_start = datetime.min.date()
+    expected_end = datetime(2023, 5, 15, 14, 30, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_default_month():
+    """Тест неизвестного типа диапазона (должен вернуть месяц)"""
+    result = get_date_range("15.05.2023 14:30:00", "UNKNOWN")
+
+    expected_start = datetime(2023, 5, 1, 0, 0, 0)
+    expected_end = datetime(2023, 5, 15, 14, 30, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_february_leap_year():
+    """Тест февраля високосного года"""
+    result = get_date_range("29.02.2024 00:00:00", "M")
+
+    expected_start = datetime(2024, 2, 1, 0, 0, 0)
+    expected_end = datetime(2024, 2, 29, 0, 0, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_year_end():
+    """Тест конца года"""
+    result = get_date_range("31.12.2023 23:59:59", "Y")
+
+    expected_start = datetime(2023, 1, 1, 0, 0, 0)
+    expected_end = datetime(2023, 12, 31, 23, 59, 59)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_month_start():
+    """Тест начала месяца"""
+    result = get_date_range("01.06.2023 00:00:01", "M")
+
+    expected_start = datetime(2023, 6, 1, 0, 0, 0)
+    expected_end = datetime(2023, 6, 1, 0, 0, 1)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_week_start():
+    """Тест начала недели (понедельник)"""
+    result = get_date_range("05.06.2023 00:00:00", "W")  # Понедельник
+
+    expected_start = datetime(2023, 6, 5, 0, 0, 0)
+    expected_end = datetime(2023, 6, 5, 0, 0, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_all_history_min_date():
+    """Тест минимальной даты для 'вся история'"""
+    result = get_date_range("01.01.0001 00:00:00", "ALL")
+
+    expected_start = datetime.min.date()
+    expected_end = datetime(1, 1, 1, 0, 0, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_year_non_default():
+    """Тест года для даты не в начале года"""
+    result = get_date_range("15.07.2023 12:00:00", "Y")
+
+    expected_start = datetime(2023, 1, 1, 0, 0, 0)
+    expected_end = datetime(2023, 7, 15, 12, 0, 0)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end
+
+
+def test_get_date_range_time_preservation():
+    """Тест сохранения времени в конечной дате"""
+    result = get_date_range("15.05.2023 14:30:45", "M")
+
+    expected_start = datetime(2023, 5, 1, 0, 0, 0)
+    expected_end = datetime(2023, 5, 15, 14, 30, 45)
+
+    assert result["start"] == expected_start
+    assert result["end"] == expected_end

@@ -140,3 +140,27 @@ def sample_transactions_top_transactions():
         {"Сумма операции": -800, "Дата платежа": datetime(2023, 5, 1), "Категория": "Техника", "Описание": "Наушники"},
         {"Сумма операции": 300, "Дата платежа": datetime(2023, 5, 25), "Категория": "Возврат", "Описание": "Возврат товара"},
     ]
+
+
+# Фикстура для мокирования requests.get
+@pytest.fixture
+def mock_requests_get():
+    with patch('src.utils.requests.get') as mock_get:
+        yield mock_get
+
+
+# Фикстуры для мокирования
+@pytest.fixture
+def mock_load_dotenv():
+    with patch('src.utils.load_dotenv') as mock:
+        yield mock
+
+@pytest.fixture
+def mock_os_getenv():
+    with patch('src.utils.os.getenv') as mock:
+        yield mock
+
+@pytest.fixture
+def mock_get_usd_rate():
+    with patch('src.utils.get_usd_rate') as mock:
+        yield mock
