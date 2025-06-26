@@ -150,14 +150,18 @@ def get_top_transactions(transaction_data: list[dict[str, Any]]) -> list[dict[st
 
     Returns: Список, содержащий в себе информациюю о транзакции.
     """
-    sorted_transactions = sorted(transaction_data, key=lambda x: x.get("Сумма операции", 0), reverse=False)
-    top_sorted_transactions = sorted_transactions[:5] if len(sorted_transactions) >= 5 else sorted_transactions
+    transaction_data_copy = transaction_data.copy()
 
+    for operation in transaction_data_copy:
+        operation["Сумма операции"] = abs(operation.get("Сумма операции"))
+
+    sorted_transactions = sorted(transaction_data_copy, key=lambda x: x.get("Сумма операции", 0), reverse=True)
+    top_sorted_transactions = sorted_transactions[:5] if len(sorted_transactions) >= 5 else sorted_transactions
 
     top_sorted_transactions_info = []
     for transaction in top_sorted_transactions:
         date = datetime.strftime(transaction.get("Дата платежа"), "%d.%m.%Y")
-        amount = -transaction.get("Сумма операции")
+        amount = transaction.get("Сумма операции")
         category = transaction.get("Категория")
         description = transaction.get("Описание")
 
