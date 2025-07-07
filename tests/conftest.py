@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+from pandas import DataFrame
 
 
 @pytest.fixture
@@ -164,3 +165,17 @@ def mock_os_getenv():
 def mock_get_usd_rate():
     with patch('src.utils.get_usd_rate') as mock:
         yield mock
+
+@pytest.fixture
+def sample_transaction_data():
+    return DataFrame({
+        'Дата операции': [
+            '2023-05-01',
+            '2023-05-15',
+            '2023-05-31',
+            '2023-04-30',
+            '2023-06-01'
+        ],
+        'Сумма': [100, 200, 300, 400, 500],
+        'Категория': ['A', 'B', 'C', 'D', 'E']
+    })

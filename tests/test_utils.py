@@ -8,7 +8,9 @@ import pandas as pd
 import pytest
 
 from src.utils import get_welcome_words, get_transaction_history, get_card_numbers, get_transactions_by_card_number, \
-    get_card_transactions_info, get_top_transactions, get_currency_rates, get_usd_rate, get_stock_prices, get_date_range
+    get_card_transactions_info, get_top_transactions, get_currency_rates, get_usd_rate, get_stock_prices, \
+    get_date_range, get_transaction_history_ranged, get_total_expenses_amount, get_total_income_amount, get_categories, \
+    get_expenses_by_top_categories, get_transfers_and_cash, get_income_categories
 
 
 # Параметризованный тест для всех случаев
@@ -877,3 +879,334 @@ def test_get_date_range_time_preservation():
 
     assert result["start"] == expected_start
     assert result["end"] == expected_end
+
+
+@patch('src.utils.get_date_range')
+def test_get_transaction_history_ranged_returns_correct_range(mock_get_date_range, sample_transaction_data):
+    """Проверка корректной фильтрации по диапазону дат"""
+    mock_get_date_range.return_value = {
+        'start': '2023-05-01',
+        'end': '2023-05-31'
+    }
+
+    result = get_transaction_history_ranged(
+        transaction_data=sample_transaction_data,
+        period_end='2023-05-31',
+        range_type='monthly'
+    )
+
+    assert len(result) == 3
+    assert '2023-05-01' in [op['Дата операции'] for op in result]
+    assert '2023-05-31' in [op['Дата операции'] for op in result]
+
+
+@patch('src.utils.get_date_range')
+def test_get_transaction_history_ranged_handles_empty_result(mock_get_date_range, sample_transaction_data):
+    """Проверка обработки случая без данных в диапазоне"""
+    mock_get_date_range.return_value = {
+        'start': '2023-07-01',
+        'end': '2023-07-31'
+    }
+
+    result = get_transaction_history_ranged(
+        transaction_data=sample_transaction_data,
+        period_end='2023-07-31',
+        range_type='monthly'
+    )
+
+    assert len(result) == 0
+
+
+@patch('src.utils.get_date_range')
+def test_get_transaction_history_ranged_inclusive_bounds(mock_get_date_range, sample_transaction_data):
+    """Проверка включения граничных значений"""
+    mock_get_date_range.return_value = {
+        'start': '2023-05-31',
+        'end': '2023-06-01'
+    }
+
+    result = get_transaction_history_ranged(
+        transaction_data=sample_transaction_data,
+        period_end='2023-06-01',
+        range_type='custom'
+    )
+
+    dates = [op['Дата операции'] for op in result]
+    assert len(result) == 2
+    assert '2023-05-31' in dates
+    assert '2023-06-01' in dates
+
+
+
+def test_get_total_expenses_amount_basic_calculation():
+    """Проверка правильности расчёта суммы расходов"""
+    transactions = [
+        {'Сумма операции': -100.0, 'Категория': 'Еда'},
+        {'Сумма операции': -200.5, 'Категория': 'Транспорт'},
+        {'Сумма операции': -50.0, 'Категория': 'Развлечения'}
+    ]
+
+    result = get_total_expenses_amount(transactions)
+    assert result == 351
+
+
+def test_get_total_expenses_amount_ignores_positive_transactions():
+    """Проверка игнорирования положительных операций (доходов)"""
+    transactions = [
+        {'Сумма операции': -100.0},
+        {'Сумма операции': 500.0},
+        {'Сумма операции': -200.0},
+        {'Сумма операции': 300.0}
+    ]
+
+    result = get_total_expenses_amount(transactions)
+    assert result == 300
+
+
+def test_get_total_expenses_amount_handles_zero_values():
+    """Проверка обработки нулевых значений"""
+    transactions = [
+        {'Сумма операции': -100.0},
+        {'Сумма операции': 0.0},
+        {'Сумма операции': -0.0},
+        {'Сумма операции': -200.0}
+    ]
+
+    result = get_total_expenses_amount(transactions)
+    assert result == 300
+
+
+def test_get_total_expenses_amount_rounds_correctly():
+    """Проверка правильного округления"""
+    transactions = [
+        {'Сумма операции': -100.4},
+        {'Сумма операции': -100.5},
+        {'Сумма операции': -100.6}
+    ]
+
+    result = get_total_expenses_amount(transactions)
+    assert result == 302
+
+
+def test_get_total_income_amount_basic_calculation():
+    """Проверка правильности расчёта суммы расходов"""
+    transactions = [
+        {'Сумма операции': 100.0, 'Категория': 'Еда'},
+        {'Сумма операции': 200.5, 'Категория': 'Транспорт'},
+        {'Сумма операции': 50.0, 'Категория': 'Развлечения'}
+    ]
+
+    result = get_total_income_amount(transactions)
+    assert result == 351
+
+
+def test_get_total_income_amount_ignores_positive_transactions():
+    """Проверка игнорирования положительных операций (доходов)"""
+    transactions = [
+        {'Сумма операции': -100.0},
+        {'Сумма операции': 500.0},
+        {'Сумма операции': -200.0},
+        {'Сумма операции': 300.0}
+    ]
+
+    result = get_total_income_amount(transactions)
+    assert result == 800
+
+
+def test_get_total_income_amount_handles_zero_values():
+    """Проверка обработки нулевых значений"""
+    transactions = [
+        {'Сумма операции': 100.0},
+        {'Сумма операции': 0.0},
+        {'Сумма операции': -0.0},
+        {'Сумма операции': 200.0}
+    ]
+
+    result = get_total_income_amount(transactions)
+    assert result == 300
+
+
+def test_get_total_income_amount_rounds_correctly():
+    """Проверка правильного округления"""
+    transactions = [
+        {'Сумма операции': 100.4},
+        {'Сумма операции': 100.5},
+        {'Сумма операции': 100.6}
+    ]
+
+    result = get_total_income_amount(transactions)
+    assert result == 302
+
+
+def test_get_categories_basic_filtering():
+    """Проверка фильтрации категорий по исключаемому списку"""
+    transactions = [
+        {"Категория": "Продукты"},
+        {"Категория": "Транспорт"},
+        {"Категория": "Наличные"},
+        {"Категория": "Рестораны"},
+        {"Категория": "Переводы"}
+    ]
+
+    result = get_categories(transactions)
+    assert result == {"Продукты", "Транспорт", "Рестораны"}
+
+
+def test_get_categories_empty_input():
+    """Проверка обработки пустого списка транзакций"""
+    transactions = []
+    result = get_categories(transactions)
+    assert result == set()
+
+
+def test_get_categories_all_excluded():
+    """Проверка случая, когда все категории исключены"""
+    transactions = [
+        {"Категория": "Наличные"},
+        {"Категория": "Переводы"},
+        {"Категория": "Пополнения"}
+    ]
+
+    result = get_categories(transactions)
+    assert result == set()
+
+
+def test_get_categories_duplicates_removed():
+    """Проверка удаления дубликатов"""
+    transactions = [
+        {"Категория": "Продукты"},
+        {"Категория": "Продукты"},
+        {"Категория": "Транспорт"},
+        {"Категория": "Транспорт"}
+    ]
+
+    result = get_categories(transactions)
+    assert result == {"Продукты", "Транспорт"}
+
+
+@patch('src.utils.get_amount_by_category')
+def test_get_expenses_by_top_categories_basic_functionality(mock_get_amount):
+    """Проверка базовой функциональности - топ-7 категорий и остальное"""
+    # Настройка моков для get_amount_by_category
+    mock_get_amount.side_effect = lambda _, cat: {
+        "category": cat,
+        "amount": {"Еда": 10000, "Транспорт": 8000, "Жилье": 7000,
+                   "Развлечения": 6000, "Одежда": 5000, "Здоровье": 4000,
+                   "Образование": 3000, "Подарки": 2000, "Книги": 1000}[cat]
+    }
+
+    transactions = [{}]  # Фиктивные данные, так как мы мокируем get_amount_by_category
+    categories = ["Еда", "Транспорт", "Жилье", "Развлечения", "Одежда",
+                  "Здоровье", "Образование", "Подарки", "Книги"]
+
+    result = get_expenses_by_top_categories(transactions, categories)
+
+    # Проверяем количество категорий
+    assert len(result) == 8  # 7 топовых + "Остальное"
+
+    # Проверяем первую категорию (самую большую)
+    assert result[0]["category"] == "Еда"
+    assert result[0]["amount"] == 10000
+
+    # Проверяем последнюю категорию ("Остальное")
+    assert result[-1]["category"] == "Остальное"
+    assert result[-1]["amount"] == 3000  # Подарки (2000) + Книги (1000)
+
+
+@patch('src.utils.get_amount_by_category')
+def test_get_expenses_by_top_categories_less_than_7(mock_get_amount):
+    """Проверка работы при количестве категорий меньше 7"""
+    mock_get_amount.side_effect = lambda _, cat: {"category": cat, "amount": 1000}
+
+    transactions = [{}]
+    categories = ["Еда", "Транспорт", "Жилье"]
+
+    result = get_expenses_by_top_categories(transactions, categories)
+
+    assert len(result) == 3
+    assert all(item["category"] != "Остальное" for item in result)
+
+
+@patch('src.utils.get_amount_by_category')
+def test_get_transfers_and_cash_basic_functionality(mock_get_amount):
+    """Проверка базовой функциональности - возврат двух категорий с сортировкой по убыванию"""
+    # Настройка моков для get_amount_by_category
+    mock_get_amount.side_effect = [
+        {"category": "Переводы", "amount": 5000},
+        {"category": "Наличные", "amount": 3000}
+    ]
+
+    transactions = [{"Категория": "Переводы", "Сумма операции": -5000},
+                    {"Категория": "Наличные", "Сумма операции": -3000}]
+
+    result = get_transfers_and_cash(transactions)
+
+    assert len(result) == 2
+    assert result[0]["category"] == "Переводы"
+    assert result[0]["amount"] == 5000
+    assert result[1]["category"] == "Наличные"
+    assert result[1]["amount"] == 3000
+
+
+@patch('src.utils.get_amount_by_category')
+def test_get_transfers_and_cash_reverse_order(mock_get_amount):
+    """Проверка сортировки при обратном порядке сумм"""
+    mock_get_amount.side_effect = [
+        {"category": "Переводы", "amount": 3000},
+        {"category": "Наличные", "amount": 5000}
+    ]
+
+    transactions = [{"Категория": "Наличные", "Сумма операции": -5000},
+                    {"Категория": "Переводы", "Сумма операции": -3000}]
+
+    result = get_transfers_and_cash(transactions)
+
+    assert result[0]["category"] == "Наличные"
+    assert result[0]["amount"] == 5000
+    assert result[1]["category"] == "Переводы"
+    assert result[1]["amount"] == 3000
+
+
+def test_get_transfers_and_cash_empty_transactions():
+    """Проверка обработки пустого списка транзакций"""
+    transactions = []
+    result = get_transfers_and_cash(transactions)
+
+    assert len(result) == 2
+    assert result[0]["category"] == "Переводы"
+    assert result[0]["amount"] == 0
+    assert result[1]["category"] == "Наличные"
+    assert result[1]["amount"] == 0
+
+
+@patch('src.utils.get_amount_by_category')
+def test_get_income_categories_basic_functionality(mock_get_amount):
+    """Проверка базовой функциональности - возврат категорий доходов с сортировкой по убыванию"""
+    # Настройка моков для get_amount_by_category
+    mock_get_amount.side_effect = [
+        {"category": "Зарплата", "amount": 50000},
+        {"category": "Дивиденды", "amount": 15000},
+        {"category": "Фриланс", "amount": 30000}
+    ]
+
+    transactions = [{"Категория": "Зарплата", "Сумма операции": 50000},
+                    {"Категория": "Дивиденды", "Сумма операции": 15000},
+                    {"Категория": "Фриланс", "Сумма операции": 30000}]
+
+    categories = ["Зарплата", "Дивиденды", "Фриланс"]
+    result = get_income_categories(transactions, categories)
+
+    assert len(result) == 3
+    assert [item["amount"] for item in result] == [50000, 30000, 15000]
+    assert [item["category"] for item in result] == ["Зарплата", "Фриланс", "Дивиденды"]
+
+
+@patch('src.utils.get_amount_by_category')
+def test_get_income_categories_empty_categories(mock_get_amount):
+    """Проверка обработки пустого списка категорий"""
+    transactions = [{"Категория": "Зарплата", "Сумма операции": 50000}]
+    categories = []
+
+    result = get_income_categories(transactions, categories)
+
+    assert result == []

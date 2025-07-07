@@ -347,7 +347,8 @@ def get_total_expenses_amount(transaction_history: list[dict[str, Any]]) -> int:
         ]
     )
 
-    return int(round(total_amount, 0))
+    decimal_rate = Decimal(str(total_amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+    return int(decimal_rate)
 
 
 def get_total_income_amount(transaction_history: list[dict[str, Any]]) -> int:
@@ -365,7 +366,8 @@ def get_total_income_amount(transaction_history: list[dict[str, Any]]) -> int:
         ]
     )
 
-    return int(round(total_amount, 0))
+    decimal_rate = Decimal(str(total_amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+    return int(decimal_rate)
 
 
 def get_categories(transaction_data: list[dict]):
@@ -392,6 +394,7 @@ def get_amount_by_category(transaction_data: list[dict], category: str, amount_t
     Args:
         transaction_data: Полный набор данных по транзакциям.
         category: Категория по которой считаются общие расходы.
+        amount_type: Тип категории транзакции.
 
     Returns: СЛоварь в виде {"category": название категории, "amount": расходы по категории}
     """
@@ -402,7 +405,8 @@ def get_amount_by_category(transaction_data: list[dict], category: str, amount_t
         ]
     )
 
-    amount = -int(round(expenses_by_category, 0)) if amount_type == "expense" else int(round(expenses_by_category, 0))
+    decimal_rate = Decimal(str(expenses_by_category)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+    amount = -decimal_rate if amount_type == "expense" else decimal_rate
 
     return {"category": category, "amount": amount}
 
