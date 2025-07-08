@@ -67,13 +67,14 @@ def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end
     return json_string
 
 
-transactions = read_file_from_xlsx("operations.xlsx")
-user_settings = read_file_from_json("user_settings.json")
-date_period = '11.10.2021 11:25:59'
-
+# Раскоментировать для тестового запуска следующие 5 строчек
+# transactions = read_file_from_xlsx("operations.xlsx")
+# user_settings = read_file_from_json("user_settings.json")
+# date_period = '11.10.2021 11:25:59'
 # view = main_view(period_end=date_period, transaction_data=transactions, user_data=user_settings)
 # print_json(view)
 
+# =======================================================================================================
 # Реализуйте набор функций и главную функцию, принимающую на вход строку с датой и второй необязательный
 # параметр — диапазон данных. По умолчанию диапазон равен одному месяцу (с начала месяца, на который
 # выпадает дата, по саму дату). Возможные значения второго необязательного параметра:
@@ -138,9 +139,9 @@ def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_en
 
     return json_string
 
-
+# Раскоментировать для тестового запуска следующие 5 строчек
+# transactions = read_file_from_xlsx("operations.xlsx")
+# user_settings = read_file_from_json("user_settings.json")
+# date_period = '11.10.2021 11:25:59'
 # event = main_event(transaction_data=transactions, user_data=user_settings, period_end=date_period, range_type='M')
 # print_json(event)
-
-print(round(75.125, 2))
-

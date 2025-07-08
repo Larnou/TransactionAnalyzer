@@ -179,3 +179,26 @@ def sample_transaction_data():
         'Сумма': [100, 200, 300, 400, 500],
         'Категория': ['A', 'B', 'C', 'D', 'E']
     })
+
+@pytest.fixture
+def sample_view_transaction_data():
+    return pd.DataFrame({
+        'Дата операции': [
+            datetime.strptime('01.05.2023 16:44:00', "%d.%m.%Y %H:%M:%S"),
+            datetime.strptime('15.05.2023 13:44:00', "%d.%m.%Y %H:%M:%S"),
+        ],
+        'Дата платежа': [
+            datetime.strptime('01.05.2023', "%d.%m.%Y"),
+            datetime.strptime('15.05.2023', "%d.%m.%Y"),
+        ],
+        'Сумма операции': [-1000, -500],
+        'Категория': ['Еда', 'Транспорт'],
+        'Номер карты': ['1234****5678', '8765****4321']
+    })
+
+@pytest.fixture
+def sample_user_data():
+    return {
+        'user_currencies': ['USD', 'EUR'],
+        'user_stocks': ['AAPL', 'GOOGL']
+    }

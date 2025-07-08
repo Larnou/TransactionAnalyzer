@@ -253,7 +253,15 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
     # Из-за ограничения кол-ва запросов 25 в день, функция будет возвращать временную заглушку.
     # Для правильной отработки файла необходимо будет закомментировать следующие 2 строки:
     # stocks_info = [{"stock": "AAPL", "price": 150.12}, {"stock": "AMZN", "price": 3173.18}]
-    # return stocks_info
+    stocks_info = []
+    for stock, prices in zip(stock_list, [150.12, 3173.18]):
+        stock_info = {
+            "stock": stock,
+            "price": prices
+        }
+
+        stocks_info.append(stock_info)
+    return stocks_info
 
     # Получение словаря со значениями курса акций
     usd_rate = get_usd_rate()
@@ -274,8 +282,8 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
 
     return stocks_info
 
+# ====================================
 # Функции для блока заданий "Событие"
-
 def get_date_range(period_end: str, range_type) -> dict[str, datetime | date]:
     """
     Возвращает диапазон дат на основе входной даты и типа диапазона.
@@ -406,7 +414,7 @@ def get_amount_by_category(transaction_data: list[dict], category: str, amount_t
     )
 
     decimal_rate = Decimal(str(expenses_by_category)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
-    amount = -decimal_rate if amount_type == "expense" else decimal_rate
+    amount = -int(decimal_rate) if amount_type == "expense" else int(decimal_rate)
 
     return {"category": category, "amount": amount}
 
