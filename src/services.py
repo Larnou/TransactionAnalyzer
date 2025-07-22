@@ -61,5 +61,5 @@ def service_cashback(transaction_data, year_for_analyze, month_for_analyze):
 # Раскоментировать для тестового запуска следующие 4 строчки
 # transactions = read_file_from_xlsx("operations.xlsx")
 # user_settings = read_file_from_json("user_settings.json")
-# cashback = service_cashback(transactions, 2021, 12)
+# cashback = service_cashback(transactions, 2021, 7)
 # print_json(cashback)

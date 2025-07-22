@@ -159,11 +159,6 @@ def read_file_from_json(filename: str, home_directiry: str = None) -> list[Any] 
 
     Returns: Список словарей с ключами названиями колонок xlsx-файла.
     """
-    """
-    Чтение файла формата JSON.
-    :param filename: Путь до файла.
-    :return: Данные файла JSON или пустой список, если произошла ошибка чтения.
-    """
     if home_directiry is None:
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         DATA_PATH = os.path.join(BASE_DIR, "data", filename)
