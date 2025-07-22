@@ -49,6 +49,17 @@ def get_transaction_history(transaction_data: DataFrame, year: str | int, month:
 
 
 def service_cashback(transaction_data, year_for_analyze, month_for_analyze):
+    """
+    Получение списка кешбеков по заданному ограничению по времени. Период строится следующим образом:
+    Выбирается месяц и год для анализа. После чего получается список всех транзакций за этот период.
+    И определяется кешбек.
+    Args:
+        transaction_data: Полный набор данных по транзакциям.
+        year_for_analyze: Годл для анализа.
+        month_for_analyze: Месяц для анализа.
+
+    Returns: JSON с информацией по кешбеку.
+    """
     # Получение списка транзакций за указанный период
     transaction_history = get_transaction_history(transaction_data, year_for_analyze, month_for_analyze)
 
