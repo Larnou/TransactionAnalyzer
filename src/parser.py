@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import numpy as np
@@ -9,7 +9,6 @@ from pandas import DataFrame
 from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
-
 
 # Список примеров и форматов дат
 # formats = [

@@ -1,7 +1,7 @@
 import json
 from unittest.mock import patch
 
-from src.views import main_view, main_event
+from src.views import main_event, main_view
 
 
 @patch('src.utils.get_welcome_words')

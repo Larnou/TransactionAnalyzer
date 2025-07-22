@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-from src.parser import read_file_from_csv, read_file_from_xlsx, print_json, read_file_from_json
+from src.parser import print_json, read_file_from_csv, read_file_from_json, read_file_from_xlsx
 
 
 def create_test_csv(filename: Path, data: list[dict]):

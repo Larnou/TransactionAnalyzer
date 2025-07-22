@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta, time
-from typing import Optional, Any, Callable
+from datetime import datetime, time, timedelta
+from typing import Any, Callable, Optional
 
 import pandas as pd
 from pandas import DataFrame
 
-from src.parser import read_file_from_xlsx, read_file_from_json
-
+from src.parser import read_file_from_json, read_file_from_xlsx
+from src.utils import create_logger
 
 
 def write_log_to_file(filename: str, data_log: list) -> None:
@@ -82,28 +82,33 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
 
     Returns: Датафрейм с информацией по тратам по категориям.
     """
-
+    spending_by_category_logger.info(f"Траты по заданной категории {category} за последние три месяца.")
     if date is None:
         period_end_date = datetime.now()
     else:
         period_end_date = datetime.strptime(date, "%d.%m.%Y %H:%M:%S")
 
+    spending_by_category_logger.info(f"Конец периода для анализа трат {period_end_date}.")
     period_start_date = period_end_date - timedelta(days=92)
     period = {'start': period_start_date, 'end': period_end_date}
+    spending_by_category_logger.info(f"Начало периода для анализа трат {period_start_date}.")
 
     operations = transactions.loc[
         (period["start"] <= transactions["Дата операции"]) &
         (transactions["Дата операции"] <= period["end"]) &
         (transactions['Категория'] == category)
     ]
+    spending_by_category_logger.info(f"Список транзакций за указанный период состоит из {len(operations)} записей.")
 
     operations.reset_index(drop=True, inplace=True)
+    spending_by_category_logger.info(f"Вывод списка транзакций operations.")
 
     return operations
 
 
 
 # Для тестового вызова раскоментировать последние три строчки
-# transactions = read_file_from_xlsx("operations.xlsx")
-# user_settings = read_file_from_json("user_settings.json")
-# spending_by_category(transactions, "Супермаркеты", "01.01.2022 00:00:00")
+transactions = read_file_from_xlsx("operations.xlsx")
+user_settings = read_file_from_json("user_settings.json")
+spending_by_category_logger = create_logger("spending_by_category_logger", "spending_by_category")
+spending_by_category(transactions, "Супермаркеты", "01.01.2022 00:00:00")

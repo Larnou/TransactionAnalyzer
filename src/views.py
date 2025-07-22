@@ -18,12 +18,12 @@ from typing import Any
 
 from pandas import DataFrame
 
-from src.parser import print_json, read_file_from_xlsx, read_file_from_json
-from src.utils import get_welcome_words, get_transaction_history, get_card_numbers, get_cards_transactions_info, \
-    get_top_transactions, get_currency_rates, get_stock_prices, get_transaction_history_ranged, \
-    get_total_expenses_amount, \
-    get_categories, get_expenses_by_top_categories, get_transfers_and_cash, get_total_income_amount, \
-    get_income_categories
+from src.parser import print_json, read_file_from_json, read_file_from_xlsx
+from src.utils import (create_logger, get_card_numbers, get_cards_transactions_info, get_categories,
+                       get_currency_rates, get_expenses_by_top_categories, get_income_categories, get_stock_prices,
+                       get_top_transactions, get_total_expenses_amount, get_total_income_amount,
+                       get_transaction_history, get_transaction_history_ranged, get_transfers_and_cash,
+                       get_welcome_words)
 
 
 def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end: str, ) -> str:
@@ -38,12 +38,20 @@ def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end
     Returns: Словарь с информацией.
     """
     # Вступительные слова приветствия
+    views_main_logger.info(f"Начата работа модуля.")
     welcome_words = get_welcome_words()
+
+    views_main_logger.info(f"Приветсвие: {welcome_words}")
 
     # Получение списка транзакицй по условию даты
     history_period = get_transaction_history(transaction_data, period_end)
+    views_main_logger.info(f"Полученый список транзакций состоит из {len(history_period)} записей.")
+
     card_numbers = get_card_numbers(history_period)
+    views_main_logger.info(f"Полученый список номеров карточек состоит из {len(card_numbers)} записей.")
+
     cards_info = get_cards_transactions_info(card_numbers, history_period)
+    views_main_logger.info(f"Длина полученного списка информации по картам: {len(cards_info)} записей.")
 
     # Топ5 транзакций по сумме платежа
     top_sorted_transactions_info = get_top_transactions(history_period)
@@ -62,12 +70,15 @@ def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end
         "stock_prices": stocks_info,
     }
 
+    views_main_logger.info(f"Конец работы веб-страницы 'Главная'")
     json_string = json.dumps(view_dict, ensure_ascii=False, indent=4)
+    views_main_logger.info(f"Вывод JSON.")
 
     return json_string
 
 
-# Раскоментировать для тестового запуска следующие 5 строчек
+# Раскоментировать для тестового запуска следующие 6 строчек
+views_main_logger = create_logger("views_main_logger", "views_main")
 # transactions = read_file_from_xlsx("operations.xlsx")
 # user_settings = read_file_from_json("user_settings.json")
 # date_period = '11.10.2021 11:25:59'
@@ -95,14 +106,18 @@ def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_en
 
     Returns: Словарь с информацией.
     """
+    views_event_logger.info(f"Начата работа веб-страницы 'События'.")
     # Получение списка транзакицй по условию даты
     history_period = get_transaction_history_ranged(transaction_data, period_end, range_type)
+    views_event_logger.info(f"Полученый список транзакций состоит из {len(history_period)} записей.")
 
     # Получение общей суммы расходов
     total_expenses_amount = get_total_expenses_amount(history_period)
+    views_event_logger.info(f"Всего было потрачено: {total_expenses_amount} рублей.")
 
     # Расходы по категориям:
     categories = get_categories(history_period)
+    views_event_logger.info(f"Список категорий состоит из {len(categories)} наименований.")
     categories_expenses = get_expenses_by_top_categories(history_period, categories)
 
     # Наличные и переводы
@@ -135,11 +150,14 @@ def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_en
         "stock_prices": stocks_info,
     }
 
+    views_event_logger.info(f"Конец работы веб-страницы 'События'")
     json_string = json.dumps(event_dict, ensure_ascii=False, indent=4)
+    views_event_logger.info(f"Вывод JSON.")
 
     return json_string
 
 # Раскоментировать для тестового запуска следующие 5 строчек
+views_event_logger = create_logger("views_event_logger", "views_event")
 # transactions = read_file_from_xlsx("operations.xlsx")
 # user_settings = read_file_from_json("user_settings.json")
 # date_period = '11.10.2021 11:25:59'

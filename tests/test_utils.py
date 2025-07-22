@@ -1,16 +1,17 @@
 import json
 import math
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from src.utils import get_welcome_words, get_transaction_history, get_card_numbers, get_transactions_by_card_number, \
-    get_card_transactions_info, get_top_transactions, get_currency_rates, get_usd_rate, get_stock_prices, \
-    get_date_range, get_transaction_history_ranged, get_total_expenses_amount, get_total_income_amount, get_categories, \
-    get_expenses_by_top_categories, get_transfers_and_cash, get_income_categories
+from src.utils import (get_card_numbers, get_card_transactions_info, get_categories, get_currency_rates,
+                       get_date_range, get_expenses_by_top_categories, get_income_categories, get_stock_prices,
+                       get_top_transactions, get_total_expenses_amount, get_total_income_amount,
+                       get_transaction_history, get_transaction_history_ranged, get_transactions_by_card_number,
+                       get_transfers_and_cash, get_usd_rate, get_welcome_words)
 
 
 # Параметризованный тест для всех случаев

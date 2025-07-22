@@ -1,10 +1,12 @@
 import json
+import logging
 import math
 import os
 import re
 from collections import defaultdict
-from datetime import datetime, timedelta, date
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import date, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -16,7 +18,46 @@ from pygments import highlight
 from pygments.formatters import TerminalFormatter
 from pygments.lexers import JsonLexer
 
-from src.parser import read_file_from_xlsx, print_json
+from src.parser import print_json, read_file_from_xlsx
+
+
+def create_logger(logger_name: str, filename: str) -> logging.Logger:
+    """
+    Создание именованного логгера с записью в указанный файл.
+    Автоматически создает директорию для логов, если она не существует.
+
+    :param logger_name: Название логгера
+    :param filename: Имя файла логов (без расширения)
+    :return: Настроенный логгер
+    """
+    # 1. Создаем путь к директории логов
+    log_dir = Path(__file__).parent.parent / "logs"
+
+    # 2. Создаем директорию, если она не существует
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    # 3. Формируем полный путь к файлу
+    log_file = log_dir / f"{filename}.log"
+
+    # 4. Создаем логгер
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+
+    # 5. Удаляем старые обработчики (предотвращает дублирование)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # 6. Создаем обработчик для файла
+    file_handler = logging.FileHandler(filename=log_file, mode="w", encoding="utf-8")
+
+    # 7. Настраиваем форматтер
+    formatter = logging.Formatter("[%(levelname)s] %(asctime)s - module %(filename)s in %(funcName)s: %(message)s")
+    file_handler.setFormatter(formatter)
+
+    # 8. Добавляем обработчик к логгеру
+    logger.addHandler(file_handler)
+
+    return logger
 
 
 def get_welcome_words():
@@ -487,5 +528,44 @@ def get_income_categories(transaction_data: list[dict], categories: list[str]):
     sorted_categories = sorted(categories_income, key=lambda x: x.get("amount", 0), reverse=True)
 
     return sorted_categories
+
+
+def create_logger(logger_name: str, filename: str) -> logging.Logger:
+    """
+    Создание именованного логгера с записью в указанный файл.
+    Автоматически создает директорию для логов, если она не существует.
+
+    :param logger_name: Название логгера
+    :param filename: Имя файла логов (без расширения)
+    :return: Настроенный логгер
+    """
+    # 1. Создаем путь к директории логов
+    log_dir = Path(__file__).parent.parent / "logs"
+
+    # 2. Создаем директорию, если она не существует
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    # 3. Формируем полный путь к файлу
+    log_file = log_dir / f"{filename}.log"
+
+    # 4. Создаем логгер
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+
+    # 5. Удаляем старые обработчики (предотвращает дублирование)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # 6. Создаем обработчик для файла
+    file_handler = logging.FileHandler(filename=log_file, mode="w", encoding="utf-8")
+
+    # 7. Настраиваем форматтер
+    formatter = logging.Formatter("[%(levelname)s] %(asctime)s - module %(filename)s in %(funcName)s: %(message)s")
+    file_handler.setFormatter(formatter)
+
+    # 8. Добавляем обработчик к логгеру
+    logger.addHandler(file_handler)
+
+    return logger
 
 
