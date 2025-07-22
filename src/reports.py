@@ -1,8 +1,7 @@
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from typing import Any, Callable, Optional
 
 import pandas as pd
-from pandas import DataFrame
 
 from src.parser import read_file_from_json, read_file_from_xlsx
 from src.utils import create_logger
@@ -34,9 +33,8 @@ def log(filename: str | None = None) -> Callable:
             # Описание времени вызова
             date = datetime.now()
             date_formatted = datetime.strftime(date, "%d.%m.%Y %H:%M:%S")
-            date_log = f'Time to access the function: {date_formatted}'
-            # log_data.append(date_log)
-
+            date_log = f"Time to access the function: {date_formatted}"
+            log_data.append(date_log)
 
             name_log = f"Function name: {func.__name__}()"
             log_data.append(name_log)
@@ -71,7 +69,6 @@ def log(filename: str | None = None) -> Callable:
     return func_decorator
 
 
-
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """
     Возвращает траты по заданной категории за последние три месяца от переданной даты.
@@ -90,21 +87,20 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
 
     spending_by_category_logger.info(f"Конец периода для анализа трат {period_end_date}.")
     period_start_date = period_end_date - timedelta(days=92)
-    period = {'start': period_start_date, 'end': period_end_date}
+    period = {"start": period_start_date, "end": period_end_date}
     spending_by_category_logger.info(f"Начало периода для анализа трат {period_start_date}.")
 
     operations = transactions.loc[
-        (period["start"] <= transactions["Дата операции"]) &
-        (transactions["Дата операции"] <= period["end"]) &
-        (transactions['Категория'] == category)
+        (period["start"] <= transactions["Дата операции"])
+        & (transactions["Дата операции"] <= period["end"])
+        & (transactions["Категория"] == category)
     ]
     spending_by_category_logger.info(f"Список транзакций за указанный период состоит из {len(operations)} записей.")
 
     operations.reset_index(drop=True, inplace=True)
-    spending_by_category_logger.info(f"Вывод списка транзакций operations.")
+    spending_by_category_logger.info("Вывод списка транзакций operations.")
 
     return operations
-
 
 
 # Для тестового вызова раскоментировать последние три строчки

@@ -1,4 +1,3 @@
-import json
 import math
 from datetime import datetime
 from unittest.mock import MagicMock, patch
@@ -15,16 +14,19 @@ from src.utils import (get_card_numbers, get_card_transactions_info, get_categor
 
 
 # Параметризованный тест для всех случаев
-@pytest.mark.parametrize("hour, minute, expected", [
-    (0, 0, "Доброй ночи"),  # Полночь
-    (5, 59, "Доброй ночи"),  # Почти утро
-    (6, 0, "Доброе утро"),  # Ровно 6 утра
-    (11, 59, "Доброе утро"),  # Почти полдень
-    (12, 0, "Добрый день"),  # Полдень
-    (17, 59, "Добрый день"),  # Почти вечер
-    (18, 0, "Добрый вечер"),  # Ровно 6 вечера
-    (23, 59, "Добрый вечер")  # Почти полночь
-])
+@pytest.mark.parametrize(
+    "hour, minute, expected",
+    [
+        (0, 0, "Доброй ночи"),  # Полночь
+        (5, 59, "Доброй ночи"),  # Почти утро
+        (6, 0, "Доброе утро"),  # Ровно 6 утра
+        (11, 59, "Доброе утро"),  # Почти полдень
+        (12, 0, "Добрый день"),  # Полдень
+        (17, 59, "Добрый день"),  # Почти вечер
+        (18, 0, "Добрый вечер"),  # Ровно 6 вечера
+        (23, 59, "Добрый вечер"),  # Почти полночь
+    ],
+)
 def test_get_welcome_words(hour, minute, expected, monkeypatch):
     # Создаем фейковый datetime
     class MockDateTime:
@@ -42,17 +44,14 @@ def test_get_transaction_history_standard_period(sample_transactions):
     """
     Стандартный случай: период 01.05.2023 - 20.05.2023 23:59:59
     """
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="20.05.2023 23:59:59"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="20.05.2023 23:59:59")
 
     # Должны попасть первые 3 транзакции
     assert len(result) == 3
     assert {t["Дата операции"] for t in result} == {
         datetime(2023, 5, 1, 0, 0, 0),
         datetime(2023, 5, 15, 12, 30, 0),
-        datetime(2023, 5, 20, 23, 59, 59)
+        datetime(2023, 5, 20, 23, 59, 59),
     }
 
 
@@ -60,10 +59,7 @@ def test_get_transaction_history_start_of_month_boundary(sample_transactions):
     """
     Граничный случай: период заканчивается в начале месяца
     """
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="01.05.2023 00:00:01"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="01.05.2023 00:00:01")
 
     # Только первая транзакция
     assert len(result) == 1
@@ -74,10 +70,7 @@ def test_get_transaction_history_end_of_month(sample_transactions):
     """
     Период до конца месяца
     """
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="31.05.2023 23:59:59"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="31.05.2023 23:59:59")
 
     # Все майские транзакции (первые 4)
     assert len(result) == 4
@@ -89,17 +82,11 @@ def test_get_transaction_history_empty_result(sample_transactions):
     Нет транзакций в указанном периоде
     """
     # Период в будущем
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="01.04.2023 00:00:00"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="01.04.2023 00:00:00")
     assert len(result) == 0
 
     # Период в прошлом
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="01.07.2023 00:00:00"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="01.07.2023 00:00:00")
     # Не должно включать транзакции июня
     assert len(result) == 0
 
@@ -109,18 +96,12 @@ def test_get_transaction_history_datetime_boundaries(sample_transactions):
     Проверка точных временных границ
     """
     # Граница на миллисекунду раньше
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="20.05.2023 23:59:58"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="20.05.2023 23:59:58")
     dates = {t["Дата операции"] for t in result}
     assert datetime(2023, 5, 20, 23, 59, 59) not in dates
 
     # Граница ровно в конечное время
-    result = get_transaction_history(
-        transaction_data=sample_transactions,
-        period_end="20.05.2023 23:59:59"
-    )
+    result = get_transaction_history(transaction_data=sample_transactions, period_end="20.05.2023 23:59:59")
     dates = {t["Дата операции"] for t in result}
     assert datetime(2023, 5, 20, 23, 59, 59) in dates
 
@@ -129,14 +110,9 @@ def test_get_transaction_history_leap_year():
     """
     Проверка корректной работы с високосным годом
     """
-    transactions = pd.DataFrame({
-        "Дата операции": [datetime(2024, 2, 29, 12, 0, 0)]
-    })
+    transactions = pd.DataFrame({"Дата операции": [datetime(2024, 2, 29, 12, 0, 0)]})
 
-    result = get_transaction_history(
-        transaction_data=transactions,
-        period_end="29.02.2024 23:59:59"
-    )
+    result = get_transaction_history(transaction_data=transactions, period_end="29.02.2024 23:59:59")
 
     assert len(result) == 1
     assert result[0]["Дата операции"] == datetime(2024, 2, 29, 12, 0, 0)
@@ -153,7 +129,7 @@ def test_get_card_numbers_nan_values():
     """Тест фильтрации NaN значений"""
     transactions = [
         {"Номер карты": "1111222233334444"},
-        {"Номер карты": float('nan')},
+        {"Номер карты": float("nan")},
         {"Номер карты": math.nan},
         {"Номер карты": np.nan},
         {"Номер карты": "5555666677778888"},
@@ -189,7 +165,7 @@ def test_get_card_numbers_mixed_types():
         {"Номер карты": "1234567812345678"},  # Строка
         {"Номер карты": True},  # Булево значение
         {"Номер карты": None},
-        {"Номер карты": float('nan')},
+        {"Номер карты": float("nan")},
     ]
 
     result = get_card_numbers(transactions)
@@ -212,7 +188,7 @@ def test_get_card_numbers_none_handling():
 def test_get_card_numbers_all_nan():
     """Тест случая, когда все значения NaN"""
     transactions = [
-        {"Номер карты": float('nan')},
+        {"Номер карты": float("nan")},
         {"Номер карты": np.nan},
         {"Номер карты": math.nan},
     ]
@@ -228,7 +204,7 @@ def test_get_card_numbers_special_cases():
         {"Номер карты": " "},  # Пробел
         {"Номер карты": 0},  # Ноль
         {"Номер карты": False},  # False
-        {"Номер карты": float('nan')},
+        {"Номер карты": float("nan")},
     ]
 
     result = get_card_numbers(transactions)
@@ -238,8 +214,7 @@ def test_get_card_numbers_special_cases():
 def test_get_transactions_by_card_number_basic_filtering(sample_transactions_for_card_numbers):
     """Тест базовой фильтрации по существующему номеру карты"""
     result = get_transactions_by_card_number(
-        transaction_data=sample_transactions_for_card_numbers,
-        card_number="1234567812345678"
+        transaction_data=sample_transactions_for_card_numbers, card_number="1234567812345678"
     )
 
     assert len(result) == 3
@@ -250,18 +225,14 @@ def test_get_transactions_by_card_number_basic_filtering(sample_transactions_for
 def test_get_transactions_by_card_number_no_matching_card(sample_transactions_for_card_numbers):
     """Тест отсутствия транзакций для заданного номера карты"""
     result = get_transactions_by_card_number(
-        transaction_data=sample_transactions_for_card_numbers,
-        card_number="9999999999999999"
+        transaction_data=sample_transactions_for_card_numbers, card_number="9999999999999999"
     )
     assert result == []
 
 
 def test_get_transactions_by_card_number_filtering_none_value(sample_transactions_for_card_numbers):
     """Тест фильтрации по None значению"""
-    result = get_transactions_by_card_number(
-        transaction_data=sample_transactions_for_card_numbers,
-        card_number=None
-    )
+    result = get_transactions_by_card_number(transaction_data=sample_transactions_for_card_numbers, card_number=None)
     assert len(result) == 1
     assert result[0]["Сумма"] == 400
 
@@ -270,8 +241,7 @@ def test_get_transactions_by_card_number_filtering_nan_value(sample_transactions
     """Тест фильтрации по NaN значению (особое поведение)"""
     # Важно: NaN != NaN, поэтому напрямую не сработает
     result = get_transactions_by_card_number(
-        transaction_data=sample_transactions_for_card_numbers,
-        card_number=math.nan
+        transaction_data=sample_transactions_for_card_numbers, card_number=math.nan
     )
     assert len(result) == 0  # Потому что math.nan != math.nan
 
@@ -284,8 +254,7 @@ def test_get_transactions_by_card_number_empty_transaction_list():
 def test_get_transactions_by_card_number_missing_card_key(sample_transactions_for_card_numbers):
     """Тест обработки транзакций без поля 'Номер карты'"""
     result = get_transactions_by_card_number(
-        transaction_data=sample_transactions_for_card_numbers,
-        card_number="8765432187654321"
+        transaction_data=sample_transactions_for_card_numbers, card_number="8765432187654321"
     )
     assert len(result) == 1
     assert result[0]["Сумма"] == 200
@@ -299,10 +268,7 @@ def test_get_transactions_by_card_number_special_characters_in_card():
         {"Номер карты": "1111****2222", "Сумма": 300},
     ]
 
-    result = get_transactions_by_card_number(
-        transaction_data=transactions,
-        card_number="1234****5678"
-    )
+    result = get_transactions_by_card_number(transaction_data=transactions, card_number="1234****5678")
     assert len(result) == 2
     assert {t["Сумма"] for t in result} == {100, 200}
 
@@ -314,10 +280,7 @@ def test_get_transactions_by_card_number_case_sensitivity():
         {"Номер карты": "aabbccdd", "Сумма": 200},
     ]
 
-    result = get_transactions_by_card_number(
-        transaction_data=transactions,
-        card_number="AaBbCcDd"
-    )
+    result = get_transactions_by_card_number(transaction_data=transactions, card_number="AaBbCcDd")
     assert len(result) == 1
     assert result[0]["Сумма"] == 100
 
@@ -329,7 +292,6 @@ def test_get_transactions_by_card_number_different_data_types():
         {"Номер карты": "12345678", "Сумма": 200},  # Строка
         {"Номер карты": True, "Сумма": 300},  # Булево значение
     ]
-
 
     # Тест для числа
     result = get_transactions_by_card_number(transactions, 12345678)
@@ -361,10 +323,7 @@ def test_get_transactions_by_card_number_partial_match():
 
 def test_get_card_transactions_info_basic_calculation(sample_transactions_cashback):
     """Тест базового расчета трат и кешбека"""
-    result = get_card_transactions_info(
-        card_transactions=sample_transactions_cashback,
-        card_number="1234"
-    )
+    result = get_card_transactions_info(card_transactions=sample_transactions_cashback, card_number="1234")
 
     # Ожидаемые траты: 100 + 200.50 + 0.01 + 150 = 450.51
     # Кешбек: 450.51 / 100 = 4.5051 → округляем до 4.51
@@ -376,11 +335,7 @@ def test_get_card_transactions_info_basic_calculation(sample_transactions_cashba
 def test_get_card_transactions_info_empty_transactions():
     """Тест пустого списка транзакций"""
     result = get_card_transactions_info([], "5678")
-    assert result == {
-        "last_digits": "5678",
-        "total_spent": 0.0,
-        "cashback": 0.0
-    }
+    assert result == {"last_digits": "5678", "total_spent": 0.0, "cashback": 0.0}
 
 
 def test_get_card_transactions_info_only_positive_operations():
@@ -585,24 +540,19 @@ def test_get_currency_rates_successful_response(mock_requests_get):
     # Настраиваем мок
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        'cbrf': {
-            'columns': ['CBRF_USD_LAST', 'CBRF_EUR_LAST'],
-            'data': [
-                [75.1234, 85.6789]
-            ]
-        }
+        "cbrf": {"columns": ["CBRF_USD_LAST", "CBRF_EUR_LAST"], "data": [[75.1234, 85.6789]]}
     }
     mock_requests_get.return_value = mock_response
 
     # Вызываем тестируемую функцию
-    result = get_currency_rates(['USD', 'EUR'])
+    result = get_currency_rates(["USD", "EUR"])
 
     # Проверяем результаты
     assert len(result) == 2
-    assert result[0]['currency'] == 'USD'
-    assert result[0]['rate'] == 75.12
-    assert result[1]['currency'] == 'EUR'
-    assert result[1]['rate'] == 85.68
+    assert result[0]["currency"] == "USD"
+    assert result[0]["rate"] == 75.12
+    assert result[1]["currency"] == "EUR"
+    assert result[1]["rate"] == 85.68
 
     # Проверяем вызов запроса
     mock_requests_get.assert_called_once_with(
@@ -625,18 +575,13 @@ def test_get_currency_rates_rounding_logic(mock_requests_get):
     """
     mock_response = MagicMock()
     mock_response.json.return_value = {
-        'cbrf': {
-            'columns': ['CBRF_USD_LAST', 'CBRF_EUR_LAST'],
-            'data': [
-                [75.125, 85.674]  # Проверка округления
-            ]
-        }
+        "cbrf": {"columns": ["CBRF_USD_LAST", "CBRF_EUR_LAST"], "data": [[75.125, 85.674]]}  # Проверка округления
     }
     mock_requests_get.return_value = mock_response
 
-    result = get_currency_rates(['USD', 'EUR'])
-    assert result[0]['rate'] == 75.13  # 75.125 → 75.13
-    assert result[1]['rate'] == 85.67  # 85.674 → 85.67
+    result = get_currency_rates(["USD", "EUR"])
+    assert result[0]["rate"] == 75.13  # 75.125 → 75.13
+    assert result[1]["rate"] == 85.67  # 85.674 → 85.67
 
 
 def test_get_usd_rate(mock_requests_get):
@@ -645,14 +590,7 @@ def test_get_usd_rate(mock_requests_get):
     """
     # Настраиваем мок
     mock_response = MagicMock()
-    mock_response.json.return_value = {
-        'cbrf': {
-            'columns': ['CBRF_USD_LAST'],
-            'data': [
-                [75.1234]
-            ]
-        }
-    }
+    mock_response.json.return_value = {"cbrf": {"columns": ["CBRF_USD_LAST"], "data": [[75.1234]]}}
     mock_requests_get.return_value = mock_response
 
     # Вызываем тестируемую функцию
@@ -667,11 +605,7 @@ def test_get_usd_rate(mock_requests_get):
     )
 
 
-def test_get_stock_prices_successful_response(
-        mock_load_dotenv,
-        mock_os_getenv,
-        mock_get_usd_rate,
-        mock_requests_get):
+def test_get_stock_prices_successful_response(mock_load_dotenv, mock_os_getenv, mock_get_usd_rate, mock_requests_get):
     """
     Тест успешного получения цен акций
     """
@@ -681,8 +615,8 @@ def test_get_stock_prices_successful_response(
 
     # Создаем мокированные ответы для разных акций
     mock_responses = [
-        MagicMock(json=lambda: {'Global Quote': {'05. price': '150.00'}}),
-        MagicMock(json=lambda: {'Global Quote': {'05. price': '3200.00'}})
+        MagicMock(json=lambda: {"Global Quote": {"05. price": "150.00"}}),
+        MagicMock(json=lambda: {"Global Quote": {"05. price": "3200.00"}}),
     ]
     mock_requests_get.side_effect = mock_responses
 
@@ -704,12 +638,7 @@ def test_get_stock_prices_successful_response(
     # )
 
 
-def test_get_stock_prices_empty_stock_list(
-        mock_load_dotenv,
-        mock_os_getenv,
-        mock_get_usd_rate,
-        mock_requests_get
-):
+def test_get_stock_prices_empty_stock_list(mock_load_dotenv, mock_os_getenv, mock_get_usd_rate, mock_requests_get):
     """
     Тест пустого списка акций
     """
@@ -718,20 +647,13 @@ def test_get_stock_prices_empty_stock_list(
     mock_requests_get.assert_not_called()
 
 
-def test_get_stock_prices_rounding_logic(
-        mock_load_dotenv,
-        mock_os_getenv,
-        mock_get_usd_rate,
-        mock_requests_get
-):
+def test_get_stock_prices_rounding_logic(mock_load_dotenv, mock_os_getenv, mock_get_usd_rate, mock_requests_get):
     """
     Тест правильности округления цен
     """
     mock_os_getenv.return_value = "test_api_key"
     mock_get_usd_rate.return_value = 75.1234
-    mock_requests_get.return_value = MagicMock(
-        json=lambda: {'Global Quote': {'05. price': '1.998'}}
-    )
+    mock_requests_get.return_value = MagicMock(json=lambda: {"Global Quote": {"05. price": "1.998"}})
 
     result = get_stock_prices(["TEST"])
     assert result[0]["price"] == 150.12  # 100.5678 * 75.1234 = 7558.52
@@ -882,69 +804,53 @@ def test_get_date_range_time_preservation():
     assert result["end"] == expected_end
 
 
-@patch('src.utils.get_date_range')
+@patch("src.utils.get_date_range")
 def test_get_transaction_history_ranged_returns_correct_range(mock_get_date_range, sample_transaction_data):
     """Проверка корректной фильтрации по диапазону дат"""
-    mock_get_date_range.return_value = {
-        'start': '2023-05-01',
-        'end': '2023-05-31'
-    }
+    mock_get_date_range.return_value = {"start": "2023-05-01", "end": "2023-05-31"}
 
     result = get_transaction_history_ranged(
-        transaction_data=sample_transaction_data,
-        period_end='2023-05-31',
-        range_type='monthly'
+        transaction_data=sample_transaction_data, period_end="2023-05-31", range_type="monthly"
     )
 
     assert len(result) == 3
-    assert '2023-05-01' in [op['Дата операции'] for op in result]
-    assert '2023-05-31' in [op['Дата операции'] for op in result]
+    assert "2023-05-01" in [op["Дата операции"] for op in result]
+    assert "2023-05-31" in [op["Дата операции"] for op in result]
 
 
-@patch('src.utils.get_date_range')
+@patch("src.utils.get_date_range")
 def test_get_transaction_history_ranged_handles_empty_result(mock_get_date_range, sample_transaction_data):
     """Проверка обработки случая без данных в диапазоне"""
-    mock_get_date_range.return_value = {
-        'start': '2023-07-01',
-        'end': '2023-07-31'
-    }
+    mock_get_date_range.return_value = {"start": "2023-07-01", "end": "2023-07-31"}
 
     result = get_transaction_history_ranged(
-        transaction_data=sample_transaction_data,
-        period_end='2023-07-31',
-        range_type='monthly'
+        transaction_data=sample_transaction_data, period_end="2023-07-31", range_type="monthly"
     )
 
     assert len(result) == 0
 
 
-@patch('src.utils.get_date_range')
+@patch("src.utils.get_date_range")
 def test_get_transaction_history_ranged_inclusive_bounds(mock_get_date_range, sample_transaction_data):
     """Проверка включения граничных значений"""
-    mock_get_date_range.return_value = {
-        'start': '2023-05-31',
-        'end': '2023-06-01'
-    }
+    mock_get_date_range.return_value = {"start": "2023-05-31", "end": "2023-06-01"}
 
     result = get_transaction_history_ranged(
-        transaction_data=sample_transaction_data,
-        period_end='2023-06-01',
-        range_type='custom'
+        transaction_data=sample_transaction_data, period_end="2023-06-01", range_type="custom"
     )
 
-    dates = [op['Дата операции'] for op in result]
+    dates = [op["Дата операции"] for op in result]
     assert len(result) == 2
-    assert '2023-05-31' in dates
-    assert '2023-06-01' in dates
-
+    assert "2023-05-31" in dates
+    assert "2023-06-01" in dates
 
 
 def test_get_total_expenses_amount_basic_calculation():
     """Проверка правильности расчёта суммы расходов"""
     transactions = [
-        {'Сумма операции': -100.0, 'Категория': 'Еда'},
-        {'Сумма операции': -200.5, 'Категория': 'Транспорт'},
-        {'Сумма операции': -50.0, 'Категория': 'Развлечения'}
+        {"Сумма операции": -100.0, "Категория": "Еда"},
+        {"Сумма операции": -200.5, "Категория": "Транспорт"},
+        {"Сумма операции": -50.0, "Категория": "Развлечения"},
     ]
 
     result = get_total_expenses_amount(transactions)
@@ -954,10 +860,10 @@ def test_get_total_expenses_amount_basic_calculation():
 def test_get_total_expenses_amount_ignores_positive_transactions():
     """Проверка игнорирования положительных операций (доходов)"""
     transactions = [
-        {'Сумма операции': -100.0},
-        {'Сумма операции': 500.0},
-        {'Сумма операции': -200.0},
-        {'Сумма операции': 300.0}
+        {"Сумма операции": -100.0},
+        {"Сумма операции": 500.0},
+        {"Сумма операции": -200.0},
+        {"Сумма операции": 300.0},
     ]
 
     result = get_total_expenses_amount(transactions)
@@ -967,10 +873,10 @@ def test_get_total_expenses_amount_ignores_positive_transactions():
 def test_get_total_expenses_amount_handles_zero_values():
     """Проверка обработки нулевых значений"""
     transactions = [
-        {'Сумма операции': -100.0},
-        {'Сумма операции': 0.0},
-        {'Сумма операции': -0.0},
-        {'Сумма операции': -200.0}
+        {"Сумма операции": -100.0},
+        {"Сумма операции": 0.0},
+        {"Сумма операции": -0.0},
+        {"Сумма операции": -200.0},
     ]
 
     result = get_total_expenses_amount(transactions)
@@ -979,11 +885,7 @@ def test_get_total_expenses_amount_handles_zero_values():
 
 def test_get_total_expenses_amount_rounds_correctly():
     """Проверка правильного округления"""
-    transactions = [
-        {'Сумма операции': -100.4},
-        {'Сумма операции': -100.5},
-        {'Сумма операции': -100.6}
-    ]
+    transactions = [{"Сумма операции": -100.4}, {"Сумма операции": -100.5}, {"Сумма операции": -100.6}]
 
     result = get_total_expenses_amount(transactions)
     assert result == 302
@@ -992,9 +894,9 @@ def test_get_total_expenses_amount_rounds_correctly():
 def test_get_total_income_amount_basic_calculation():
     """Проверка правильности расчёта суммы расходов"""
     transactions = [
-        {'Сумма операции': 100.0, 'Категория': 'Еда'},
-        {'Сумма операции': 200.5, 'Категория': 'Транспорт'},
-        {'Сумма операции': 50.0, 'Категория': 'Развлечения'}
+        {"Сумма операции": 100.0, "Категория": "Еда"},
+        {"Сумма операции": 200.5, "Категория": "Транспорт"},
+        {"Сумма операции": 50.0, "Категория": "Развлечения"},
     ]
 
     result = get_total_income_amount(transactions)
@@ -1004,10 +906,10 @@ def test_get_total_income_amount_basic_calculation():
 def test_get_total_income_amount_ignores_positive_transactions():
     """Проверка игнорирования положительных операций (доходов)"""
     transactions = [
-        {'Сумма операции': -100.0},
-        {'Сумма операции': 500.0},
-        {'Сумма операции': -200.0},
-        {'Сумма операции': 300.0}
+        {"Сумма операции": -100.0},
+        {"Сумма операции": 500.0},
+        {"Сумма операции": -200.0},
+        {"Сумма операции": 300.0},
     ]
 
     result = get_total_income_amount(transactions)
@@ -1017,10 +919,10 @@ def test_get_total_income_amount_ignores_positive_transactions():
 def test_get_total_income_amount_handles_zero_values():
     """Проверка обработки нулевых значений"""
     transactions = [
-        {'Сумма операции': 100.0},
-        {'Сумма операции': 0.0},
-        {'Сумма операции': -0.0},
-        {'Сумма операции': 200.0}
+        {"Сумма операции": 100.0},
+        {"Сумма операции": 0.0},
+        {"Сумма операции": -0.0},
+        {"Сумма операции": 200.0},
     ]
 
     result = get_total_income_amount(transactions)
@@ -1029,11 +931,7 @@ def test_get_total_income_amount_handles_zero_values():
 
 def test_get_total_income_amount_rounds_correctly():
     """Проверка правильного округления"""
-    transactions = [
-        {'Сумма операции': 100.4},
-        {'Сумма операции': 100.5},
-        {'Сумма операции': 100.6}
-    ]
+    transactions = [{"Сумма операции": 100.4}, {"Сумма операции": 100.5}, {"Сумма операции": 100.6}]
 
     result = get_total_income_amount(transactions)
     assert result == 302
@@ -1046,7 +944,7 @@ def test_get_categories_basic_filtering():
         {"Категория": "Транспорт"},
         {"Категория": "Наличные"},
         {"Категория": "Рестораны"},
-        {"Категория": "Переводы"}
+        {"Категория": "Переводы"},
     ]
 
     result = get_categories(transactions)
@@ -1062,11 +960,7 @@ def test_get_categories_empty_input():
 
 def test_get_categories_all_excluded():
     """Проверка случая, когда все категории исключены"""
-    transactions = [
-        {"Категория": "Наличные"},
-        {"Категория": "Переводы"},
-        {"Категория": "Пополнения"}
-    ]
+    transactions = [{"Категория": "Наличные"}, {"Категория": "Переводы"}, {"Категория": "Пополнения"}]
 
     result = get_categories(transactions)
     assert result == set()
@@ -1078,27 +972,34 @@ def test_get_categories_duplicates_removed():
         {"Категория": "Продукты"},
         {"Категория": "Продукты"},
         {"Категория": "Транспорт"},
-        {"Категория": "Транспорт"}
+        {"Категория": "Транспорт"},
     ]
 
     result = get_categories(transactions)
     assert result == {"Продукты", "Транспорт"}
 
 
-@patch('src.utils.get_amount_by_category')
+@patch("src.utils.get_amount_by_category")
 def test_get_expenses_by_top_categories_basic_functionality(mock_get_amount):
     """Проверка базовой функциональности - топ-7 категорий и остальное"""
     # Настройка моков для get_amount_by_category
     mock_get_amount.side_effect = lambda _, cat: {
         "category": cat,
-        "amount": {"Еда": 10000, "Транспорт": 8000, "Жилье": 7000,
-                   "Развлечения": 6000, "Одежда": 5000, "Здоровье": 4000,
-                   "Образование": 3000, "Подарки": 2000, "Книги": 1000}[cat]
+        "amount": {
+            "Еда": 10000,
+            "Транспорт": 8000,
+            "Жилье": 7000,
+            "Развлечения": 6000,
+            "Одежда": 5000,
+            "Здоровье": 4000,
+            "Образование": 3000,
+            "Подарки": 2000,
+            "Книги": 1000,
+        }[cat],
     }
 
     transactions = [{}]  # Фиктивные данные, так как мы мокируем get_amount_by_category
-    categories = ["Еда", "Транспорт", "Жилье", "Развлечения", "Одежда",
-                  "Здоровье", "Образование", "Подарки", "Книги"]
+    categories = ["Еда", "Транспорт", "Жилье", "Развлечения", "Одежда", "Здоровье", "Образование", "Подарки", "Книги"]
 
     result = get_expenses_by_top_categories(transactions, categories)
 
@@ -1114,7 +1015,7 @@ def test_get_expenses_by_top_categories_basic_functionality(mock_get_amount):
     assert result[-1]["amount"] == 3000  # Подарки (2000) + Книги (1000)
 
 
-@patch('src.utils.get_amount_by_category')
+@patch("src.utils.get_amount_by_category")
 def test_get_expenses_by_top_categories_less_than_7(mock_get_amount):
     """Проверка работы при количестве категорий меньше 7"""
     mock_get_amount.side_effect = lambda _, cat: {"category": cat, "amount": 1000}
@@ -1128,17 +1029,16 @@ def test_get_expenses_by_top_categories_less_than_7(mock_get_amount):
     assert all(item["category"] != "Остальное" for item in result)
 
 
-@patch('src.utils.get_amount_by_category')
+@patch("src.utils.get_amount_by_category")
 def test_get_transfers_and_cash_basic_functionality(mock_get_amount):
     """Проверка базовой функциональности - возврат двух категорий с сортировкой по убыванию"""
     # Настройка моков для get_amount_by_category
-    mock_get_amount.side_effect = [
-        {"category": "Переводы", "amount": 5000},
-        {"category": "Наличные", "amount": 3000}
-    ]
+    mock_get_amount.side_effect = [{"category": "Переводы", "amount": 5000}, {"category": "Наличные", "amount": 3000}]
 
-    transactions = [{"Категория": "Переводы", "Сумма операции": -5000},
-                    {"Категория": "Наличные", "Сумма операции": -3000}]
+    transactions = [
+        {"Категория": "Переводы", "Сумма операции": -5000},
+        {"Категория": "Наличные", "Сумма операции": -3000},
+    ]
 
     result = get_transfers_and_cash(transactions)
 
@@ -1149,16 +1049,15 @@ def test_get_transfers_and_cash_basic_functionality(mock_get_amount):
     assert result[1]["amount"] == 3000
 
 
-@patch('src.utils.get_amount_by_category')
+@patch("src.utils.get_amount_by_category")
 def test_get_transfers_and_cash_reverse_order(mock_get_amount):
     """Проверка сортировки при обратном порядке сумм"""
-    mock_get_amount.side_effect = [
-        {"category": "Переводы", "amount": 3000},
-        {"category": "Наличные", "amount": 5000}
-    ]
+    mock_get_amount.side_effect = [{"category": "Переводы", "amount": 3000}, {"category": "Наличные", "amount": 5000}]
 
-    transactions = [{"Категория": "Наличные", "Сумма операции": -5000},
-                    {"Категория": "Переводы", "Сумма операции": -3000}]
+    transactions = [
+        {"Категория": "Наличные", "Сумма операции": -5000},
+        {"Категория": "Переводы", "Сумма операции": -3000},
+    ]
 
     result = get_transfers_and_cash(transactions)
 
@@ -1180,19 +1079,21 @@ def test_get_transfers_and_cash_empty_transactions():
     assert result[1]["amount"] == 0
 
 
-@patch('src.utils.get_amount_by_category')
+@patch("src.utils.get_amount_by_category")
 def test_get_income_categories_basic_functionality(mock_get_amount):
     """Проверка базовой функциональности - возврат категорий доходов с сортировкой по убыванию"""
     # Настройка моков для get_amount_by_category
     mock_get_amount.side_effect = [
         {"category": "Зарплата", "amount": 50000},
         {"category": "Дивиденды", "amount": 15000},
-        {"category": "Фриланс", "amount": 30000}
+        {"category": "Фриланс", "amount": 30000},
     ]
 
-    transactions = [{"Категория": "Зарплата", "Сумма операции": 50000},
-                    {"Категория": "Дивиденды", "Сумма операции": 15000},
-                    {"Категория": "Фриланс", "Сумма операции": 30000}]
+    transactions = [
+        {"Категория": "Зарплата", "Сумма операции": 50000},
+        {"Категория": "Дивиденды", "Сумма операции": 15000},
+        {"Категория": "Фриланс", "Сумма операции": 30000},
+    ]
 
     categories = ["Зарплата", "Дивиденды", "Фриланс"]
     result = get_income_categories(transactions, categories)
@@ -1202,7 +1103,7 @@ def test_get_income_categories_basic_functionality(mock_get_amount):
     assert [item["category"] for item in result] == ["Зарплата", "Фриланс", "Дивиденды"]
 
 
-@patch('src.utils.get_amount_by_category')
+@patch("src.utils.get_amount_by_category")
 def test_get_income_categories_empty_categories(mock_get_amount):
     """Проверка обработки пустого списка категорий"""
     transactions = [{"Категория": "Зарплата", "Сумма операции": 50000}]

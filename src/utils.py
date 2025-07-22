@@ -1,24 +1,14 @@
-import json
 import logging
 import math
 import os
-import re
-from collections import defaultdict
 from datetime import date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import pandas as pd
 import requests
 from dotenv import load_dotenv
 from pandas import DataFrame
-from pygments import highlight
-from pygments.formatters import TerminalFormatter
-from pygments.lexers import JsonLexer
-
-from src.parser import print_json, read_file_from_xlsx
 
 
 def create_logger(logger_name: str, filename: str) -> logging.Logger:
@@ -86,13 +76,12 @@ def get_transaction_history(transaction_data: DataFrame, period_end: str) -> lis
 
     period_end_date = datetime.strptime(period_end, "%d.%m.%Y %H:%M:%S")
     period_start_date = period_end_date.replace(day=1, hour=0, minute=0, second=0)
-    period = {'start': period_start_date, 'end': period_end_date}
+    period = {"start": period_start_date, "end": period_end_date}
 
     operations = transaction_data.to_dict("records")
     # Фильтруем операции, где описание соответствует шаблону period
     transaction_history = [
-        operation for operation in operations
-        if period["start"] <= operation["Дата операции"] <= period["end"]
+        operation for operation in operations if period["start"] <= operation["Дата операции"] <= period["end"]
     ]
 
     return transaction_history
@@ -139,9 +128,10 @@ def get_card_transactions_info(card_transactions: list[dict[str, Any]], card_num
     """
     total_spent = sum(
         [
-            -operation["Сумма операции"] for operation in card_transactions
+            -operation["Сумма операции"]
+            for operation in card_transactions
             if not (isinstance(operation["Сумма операции"], float) and math.isnan(operation["Сумма операции"]))
-               and operation["Сумма операции"] < 0
+            and operation["Сумма операции"] < 0
         ]
     )
 
@@ -153,8 +143,8 @@ def get_card_transactions_info(card_transactions: list[dict[str, Any]], card_num
     #     ]
     # )
 
-    total_cashback = Decimal(str(total_spent / 100)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-    total_spent = Decimal(str(total_spent)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    total_cashback = Decimal(str(total_spent / 100)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    total_spent = Decimal(str(total_spent)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     card_total_info = {
         "last_digits": card_number,
@@ -165,7 +155,9 @@ def get_card_transactions_info(card_transactions: list[dict[str, Any]], card_num
     return card_total_info
 
 
-def get_cards_transactions_info(card_numbers: list[str], transaction_history: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def get_cards_transactions_info(
+    card_numbers: list[str], transaction_history: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     """
     Получение информациии по списку транзакций card_transactions, совершённых с номеров карт card_numbers.
     Args:
@@ -234,17 +226,15 @@ def get_currency_rates(currency_list: list[str]) -> list[dict[str, Any]]:
 
     currencies_info = []
     for currency in currency_list:
-        currency_rate = data['cbrf']['data'][0][data['cbrf']['columns'].index(f'CBRF_{currency}_LAST')]
-        decimal_rate = Decimal(str(currency_rate)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        currency_rate = data["cbrf"]["data"][0][data["cbrf"]["columns"].index(f"CBRF_{currency}_LAST")]
+        decimal_rate = Decimal(str(currency_rate)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        currency_info = {
-            "currency": currency,
-            "rate": float(decimal_rate)
-        }
+        currency_info = {"currency": currency, "rate": float(decimal_rate)}
 
         currencies_info.append(currency_info)
 
     return currencies_info
+
 
 # В работе не пригодится, но полезная функция с АПИ МОСБИРЖИ
 # def get_rus_stock_prices(stocks_list: list[str]) -> list[dict[str, Any]]:
@@ -276,7 +266,7 @@ def get_usd_rate():
     url = "https://iss.moex.com/iss/statistics/engines/currency/markets/selt/rates.json?iss.meta=off"
     response = requests.get(url)
     data = response.json()
-    currency_rate = data['cbrf']['data'][0][data['cbrf']['columns'].index(f'CBRF_USD_LAST')]
+    currency_rate = data["cbrf"]["data"][0][data["cbrf"]["columns"].index("CBRF_USD_LAST")]
     return currency_rate
 
 
@@ -296,10 +286,7 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
     # stocks_info = [{"stock": "AAPL", "price": 150.12}, {"stock": "AMZN", "price": 3173.18}]
     stocks_info = []
     for stock, prices in zip(stock_list, [150.12, 3173.18]):
-        stock_info = {
-            "stock": stock,
-            "price": prices
-        }
+        stock_info = {"stock": stock, "price": prices}
 
         stocks_info.append(stock_info)
     return stocks_info
@@ -311,17 +298,15 @@ def get_stock_prices(stock_list: list[str]) -> list[dict[str, Any]]:
         url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={stock}&apikey={API_ALPHA_VANTAGE}"
         response = requests.get(url)
         data = response.json()
-        stock_price = float(data['Global Quote']['05. price'])
-        decimal_rate = Decimal(str(stock_price * usd_rate)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        stock_price = float(data["Global Quote"]["05. price"])
+        decimal_rate = Decimal(str(stock_price * usd_rate)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-        stock_info = {
-            "stock": stock,
-            "price": float(decimal_rate)
-        }
+        stock_info = {"stock": stock, "price": float(decimal_rate)}
 
         stocks_info.append(stock_info)
 
     return stocks_info
+
 
 # ====================================
 # Функции для блока заданий "Событие"
@@ -338,24 +323,24 @@ def get_date_range(period_end: str, range_type) -> dict[str, datetime | date]:
 
     period_end_date = datetime.strptime(period_end, "%d.%m.%Y %H:%M:%S")
 
-    if range_type == 'W':  # Неделя
+    if range_type == "W":  # Неделя
         start = period_end_date - timedelta(days=period_end_date.weekday())
         start = start.replace(hour=0, minute=0, second=0)
         end = period_end_date
-    elif range_type == 'M':  # Месяц
+    elif range_type == "M":  # Месяц
         start = period_end_date.replace(day=1, hour=0, minute=0, second=0)
         end = period_end_date
-    elif range_type == 'Y':  # Год
+    elif range_type == "Y":  # Год
         start = period_end_date.replace(month=1, day=1, hour=0, minute=0, second=0)
         end = period_end_date
-    elif range_type == 'ALL':  # Вся история
+    elif range_type == "ALL":  # Вся история
         start = datetime.min.date()
         end = period_end_date
     else:  # Неизвестный тип -> используем месяц по умолчанию
         start = period_end_date.replace(day=1, hour=0, minute=0, second=0)
         end = period_end_date
 
-    return {'start': start, 'end': end}
+    return {"start": start, "end": end}
 
 
 def get_transaction_history_ranged(transaction_data: DataFrame, period_end: str, range_type) -> list[dict[str, Any]]:
@@ -374,8 +359,7 @@ def get_transaction_history_ranged(transaction_data: DataFrame, period_end: str,
     operations = transaction_data.to_dict("records")
     # Фильтруем операции, где описание соответствует шаблону period
     transaction_history = [
-        operation for operation in operations
-        if period["start"] <= operation["Дата операции"] <= period["end"]
+        operation for operation in operations if period["start"] <= operation["Дата операции"] <= period["end"]
     ]
 
     return transaction_history
@@ -390,13 +374,10 @@ def get_total_expenses_amount(transaction_history: list[dict[str, Any]]) -> int:
     Returns: Сумма расходов.
     """
     total_amount = sum(
-        [
-            -operation.get('Сумма операции') for operation in transaction_history
-            if operation.get('Сумма операции') < 0
-        ]
+        [-operation.get("Сумма операции") for operation in transaction_history if operation.get("Сумма операции") < 0]
     )
 
-    decimal_rate = Decimal(str(total_amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+    decimal_rate = Decimal(str(total_amount)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     return int(decimal_rate)
 
 
@@ -409,13 +390,10 @@ def get_total_income_amount(transaction_history: list[dict[str, Any]]) -> int:
     Returns: Сумма пополнений.
     """
     total_amount = sum(
-        [
-            operation.get('Сумма операции') for operation in transaction_history
-            if operation.get('Сумма операции') > 0
-        ]
+        [operation.get("Сумма операции") for operation in transaction_history if operation.get("Сумма операции") > 0]
     )
 
-    decimal_rate = Decimal(str(total_amount)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+    decimal_rate = Decimal(str(total_amount)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     return int(decimal_rate)
 
 
@@ -429,7 +407,8 @@ def get_categories(transaction_data: list[dict]):
     """
     not_in_categories_list = ["Наличные", "Переводы", "Пополнения", "Бонусы"]
     categories = [
-        operation.get("Категория") for operation in transaction_data
+        operation.get("Категория")
+        for operation in transaction_data
         if operation.get("Категория") not in not_in_categories_list
     ]
 
@@ -437,7 +416,9 @@ def get_categories(transaction_data: list[dict]):
     return set([category for category in categories if category == category])
 
 
-def get_amount_by_category(transaction_data: list[dict], category: str, amount_type: str = "expense") -> dict[str, str | int]:
+def get_amount_by_category(
+    transaction_data: list[dict], category: str, amount_type: str = "expense"
+) -> dict[str, str | int]:
     """
     Получение сумм расходов по категории category из списка transaction_data.
     Args:
@@ -448,13 +429,10 @@ def get_amount_by_category(transaction_data: list[dict], category: str, amount_t
     Returns: СЛоварь в виде {"category": название категории, "amount": расходы по категории}
     """
     expenses_by_category = sum(
-        [
-            operation.get('Сумма операции') for operation in transaction_data
-            if operation.get("Категория") == category
-        ]
+        [operation.get("Сумма операции") for operation in transaction_data if operation.get("Категория") == category]
     )
 
-    decimal_rate = Decimal(str(expenses_by_category)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+    decimal_rate = Decimal(str(expenses_by_category)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     amount = -int(decimal_rate) if amount_type == "expense" else int(decimal_rate)
 
     return {"category": category, "amount": amount}
@@ -522,50 +500,9 @@ def get_income_categories(transaction_data: list[dict], categories: list[str]):
     """
     categories_income = []
     for category in categories:
-        expenses_by_category = get_amount_by_category(transaction_data, category, amount_type = "income")
+        expenses_by_category = get_amount_by_category(transaction_data, category, amount_type="income")
         categories_income.append(expenses_by_category)
 
     sorted_categories = sorted(categories_income, key=lambda x: x.get("amount", 0), reverse=True)
 
     return sorted_categories
-
-
-def create_logger(logger_name: str, filename: str) -> logging.Logger:
-    """
-    Создание именованного логгера с записью в указанный файл.
-    Автоматически создает директорию для логов, если она не существует.
-
-    :param logger_name: Название логгера
-    :param filename: Имя файла логов (без расширения)
-    :return: Настроенный логгер
-    """
-    # 1. Создаем путь к директории логов
-    log_dir = Path(__file__).parent.parent / "logs"
-
-    # 2. Создаем директорию, если она не существует
-    log_dir.mkdir(parents=True, exist_ok=True)
-
-    # 3. Формируем полный путь к файлу
-    log_file = log_dir / f"{filename}.log"
-
-    # 4. Создаем логгер
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.DEBUG)
-
-    # 5. Удаляем старые обработчики (предотвращает дублирование)
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
-    # 6. Создаем обработчик для файла
-    file_handler = logging.FileHandler(filename=log_file, mode="w", encoding="utf-8")
-
-    # 7. Настраиваем форматтер
-    formatter = logging.Formatter("[%(levelname)s] %(asctime)s - module %(filename)s in %(funcName)s: %(message)s")
-    file_handler.setFormatter(formatter)
-
-    # 8. Добавляем обработчик к логгеру
-    logger.addHandler(file_handler)
-
-    return logger
-
-

@@ -27,6 +27,7 @@ def test_log_success_file(tmp_path):
     assert "Function name: test_func()" in content
     assert "The result of the function execution test_func(): 15" in content
 
+
 # def test_log_success_file_no_filename(tmp_path):
 #     log_file = tmp_path / "test_func.log"
 #
@@ -68,7 +69,7 @@ def test_spending_by_category():
             datetime(2025, 7, 23),  # После периода
         ],
         "Категория": ["food", "food", "food", "tech"],
-        "Сумма": [100, 200, 300, 400]
+        "Сумма": [100, 200, 300, 400],
     }
     transactions = pd.DataFrame(data)
     date = "22.07.2025 00:00:00"
@@ -84,11 +85,7 @@ def test_spending_by_category():
 
 def test_spending_by_category_empty_result():
     """Проверка пустого результата при отсутствии подходящих транзакций"""
-    data = {
-        "Дата операции": [datetime(2025, 7, 22)],
-        "Категория": ["tech"],
-        "Сумма": [500]
-    }
+    data = {"Дата операции": [datetime(2025, 7, 22)], "Категория": ["tech"], "Сумма": [500]}
     transactions = pd.DataFrame(data)
 
     result = spending_by_category(transactions, "food", "22.07.2025 00:00:00")
@@ -103,7 +100,7 @@ def test_spending_by_category_boundary_dates():
     data = {
         "Дата операции": [start_date - timedelta(minutes=1), start_date, end_date, end_date + timedelta(minutes=1)],
         "Категория": ["food"] * 4,
-        "Сумма": [1, 2, 3, 4]
+        "Сумма": [1, 2, 3, 4],
     }
     transactions = pd.DataFrame(data)
     date = "22.07.2025 00:00:00"

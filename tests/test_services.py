@@ -3,7 +3,6 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
 from src.services import get_transaction_history, service_cashback
 
@@ -75,10 +74,7 @@ def test_service_cashback_basic(sample_transactions_cashback_info):
     result_dict = json.loads(result)
 
     # Проверяем результаты
-    assert result_dict == {
-        "Продукты": 70,  # 50 + 20 (только за май)
-        "Транспорт": 30
-    }
+    assert result_dict == {"Продукты": 70, "Транспорт": 30}  # 50 + 20 (только за май)
 
 
 def test_service_cashback_excluded_categories(sample_transactions_cashback_info):
@@ -100,11 +96,9 @@ def test_service_cashback_sorting(sample_transactions_cashback_info):
     df = sample_transactions_cashback_info.copy()
 
     # Добавляем новую транзакцию
-    new_transaction = pd.DataFrame([{
-        "Дата операции": datetime(2023, 5, 15),
-        "Категория": "Рестораны",
-        "Бонусы (включая кэшбэк)": 100
-    }])
+    new_transaction = pd.DataFrame(
+        [{"Дата операции": datetime(2023, 5, 15), "Категория": "Рестораны", "Бонусы (включая кэшбэк)": 100}]
+    )
     df = pd.concat([df, new_transaction], ignore_index=True)
 
     year = 2023
@@ -115,15 +109,11 @@ def test_service_cashback_sorting(sample_transactions_cashback_info):
     # Проверяем порядок ключей
     keys = list(result_dict.keys())
     assert keys == ["Рестораны", "Продукты", "Транспорт"]
-    assert result_dict == {
-        "Рестораны": 100,
-        "Продукты": 70,
-        "Транспорт": 30
-    }
+    assert result_dict == {"Рестораны": 100, "Продукты": 70, "Транспорт": 30}
 
 
-@patch('src.services.get_transaction_history')
-@patch('src.services.get_categories')
+@patch("src.services.get_transaction_history")
+@patch("src.services.get_categories")
 def test_service_cashback_empty_month(mock_get_categories, mock_get_history, sample_transactions_cashback_info):
     """Проверка обработки месяца без транзакций"""
     mock_get_history.return_value = []
@@ -137,8 +127,8 @@ def test_service_cashback_empty_month(mock_get_categories, mock_get_history, sam
     assert result_dict == {}
 
 
-@patch('src.services.get_transaction_history')
-@patch('src.services.get_categories')
+@patch("src.services.get_transaction_history")
+@patch("src.services.get_categories")
 def test_service_cashback_zero_cashback(mock_get_categories, mock_get_history, sample_transactions_cashback_info):
     """Проверка обработки нулевого кэшбэка"""
     # Создаем модифицированный DataFrame с нулевыми бонусами
@@ -153,9 +143,4 @@ def test_service_cashback_zero_cashback(mock_get_categories, mock_get_history, s
     result = service_cashback(df, year, month)
     result_dict = json.loads(result)
 
-    assert result_dict == {
-        "Продукты": 0,
-        "Транспорт": 0,
-        "Наличные": 0,
-        "Переводы": 0
-    }
+    assert result_dict == {"Продукты": 0, "Транспорт": 0, "Наличные": 0, "Переводы": 0}

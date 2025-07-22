@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any
 
 import numpy as np
@@ -20,6 +20,7 @@ from pygments.lexers import JsonLexer
 #     '%d %B %Y %H:%M:%S',  # 15 мая 2023 14:30:00
 #     '%Y%m%d%H%M%S',  # 20230515143000
 # ]
+
 
 def read_file_from_csv(filename: str, home_directiry: str = None) -> DataFrame:
     """
@@ -41,23 +42,17 @@ def read_file_from_csv(filename: str, home_directiry: str = None) -> DataFrame:
     csv_data = csv_data.dropna(how="all")
 
     # Альтернативный вариант с pandas (если все даты в одном формате)
-    csv_data['Дата операции'] = pd.to_datetime(
-        csv_data['Дата операции'],
-        format='%d.%m.%Y %H:%M:%S',
-        errors='coerce',
-        dayfirst=True
+    csv_data["Дата операции"] = pd.to_datetime(
+        csv_data["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce", dayfirst=True
     )
 
-    csv_data['Дата платежа'] = pd.to_datetime(
-        csv_data['Дата платежа'],
-        format='%d.%m.%Y',
-        errors='coerce',
-        dayfirst=True
+    csv_data["Дата платежа"] = pd.to_datetime(
+        csv_data["Дата платежа"], format="%d.%m.%Y", errors="coerce", dayfirst=True
     )
 
     # Замена оставшихся проблемных значений
-    csv_data['Дата операции'] = csv_data['Дата операции'].replace({np.nan: None})
-    csv_data['Дата платежа']  = csv_data['Дата платежа'].replace({np.nan: None})
+    csv_data["Дата операции"] = csv_data["Дата операции"].replace({np.nan: None})
+    csv_data["Дата платежа"] = csv_data["Дата платежа"].replace({np.nan: None})
 
     # xlsx_operations = csv_data.to_dict("records")
     return csv_data
@@ -79,27 +74,21 @@ def read_file_from_xlsx(filename: str, home_directiry: str = None) -> DataFrame:
         DATA_PATH = os.path.join(home_directiry, filename)
 
     # Читаем как строку для последующей обработки
-    xlsx_data = pd.read_excel(DATA_PATH, engine='openpyxl', dtype={'Дата операции': str}, sheet_name=0)
+    xlsx_data = pd.read_excel(DATA_PATH, engine="openpyxl", dtype={"Дата операции": str}, sheet_name=0)
     xlsx_data = xlsx_data.dropna(how="all")
 
     # Альтернативный вариант с pandas (если все даты в одном формате)
-    xlsx_data['Дата операции'] = pd.to_datetime(
-        xlsx_data['Дата операции'],
-        format='%d.%m.%Y %H:%M:%S',
-        errors='coerce',
-        dayfirst=True
+    xlsx_data["Дата операции"] = pd.to_datetime(
+        xlsx_data["Дата операции"], format="%d.%m.%Y %H:%M:%S", errors="coerce", dayfirst=True
     )
 
-    xlsx_data['Дата платежа'] = pd.to_datetime(
-        xlsx_data['Дата платежа'],
-        format='%d.%m.%Y',
-        errors='coerce',
-        dayfirst=True
+    xlsx_data["Дата платежа"] = pd.to_datetime(
+        xlsx_data["Дата платежа"], format="%d.%m.%Y", errors="coerce", dayfirst=True
     )
 
     # Замена оставшихся проблемных значений
-    xlsx_data['Дата операции'] = xlsx_data['Дата операции'].replace({np.nan: None})
-    xlsx_data['Дата платежа']  = xlsx_data['Дата платежа'].replace({np.nan: None})
+    xlsx_data["Дата операции"] = xlsx_data["Дата операции"].replace({np.nan: None})
+    xlsx_data["Дата платежа"] = xlsx_data["Дата платежа"].replace({np.nan: None})
 
     # xlsx_operations = xlsx_data.to_dict("records")
     return xlsx_data
@@ -127,12 +116,7 @@ def print_json(data: list[dict[str, Any]] | dict[str, Any] | str):
         json_str = json.loads(data)
 
         # Сериализуем и печатаем
-        json_dict = json.dumps(
-            json_str,
-            indent=4,
-            ensure_ascii=False,
-            default=str  # Дополнительная страховка
-        )
+        json_dict = json.dumps(json_str, indent=4, ensure_ascii=False, default=str)  # Дополнительная страховка
         print(highlight(json_dict, JsonLexer(), TerminalFormatter()))
 
     else:
@@ -140,12 +124,7 @@ def print_json(data: list[dict[str, Any]] | dict[str, Any] | str):
         converted_data = convert_datetime(data)
 
         # Сериализуем и печатаем
-        json_str = json.dumps(
-            converted_data,
-            indent=4,
-            ensure_ascii=False,
-            default=str  # Дополнительная страховка
-        )
+        json_str = json.dumps(converted_data, indent=4, ensure_ascii=False, default=str)  # Дополнительная страховка
         print(highlight(json_str, JsonLexer(), TerminalFormatter()))
 
 

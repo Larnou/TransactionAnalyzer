@@ -18,7 +18,6 @@ from typing import Any
 
 from pandas import DataFrame
 
-from src.parser import print_json, read_file_from_json, read_file_from_xlsx
 from src.utils import (create_logger, get_card_numbers, get_cards_transactions_info, get_categories,
                        get_currency_rates, get_expenses_by_top_categories, get_income_categories, get_stock_prices,
                        get_top_transactions, get_total_expenses_amount, get_total_income_amount,
@@ -26,7 +25,11 @@ from src.utils import (create_logger, get_card_numbers, get_cards_transactions_i
                        get_welcome_words)
 
 
-def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end: str, ) -> str:
+def main_view(
+    transaction_data: DataFrame,
+    user_data: dict[str, Any],
+    period_end: str,
+) -> str:
     """
     Возвращает информацию по общим тратам, по каждой карте: последние 4 цифры карты; общая сумма расходов;
     кешбэк (1 рубль на каждые 100 рублей), топ-5 транзакций по сумме платежа, курс валют, стоимость акций из S&P500.
@@ -38,7 +41,7 @@ def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end
     Returns: Словарь с информацией.
     """
     # Вступительные слова приветствия
-    views_main_logger.info(f"Начата работа модуля.")
+    views_main_logger.info("Начата работа модуля.")
     welcome_words = get_welcome_words()
 
     views_main_logger.info(f"Приветсвие: {welcome_words}")
@@ -57,10 +60,10 @@ def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end
     top_sorted_transactions_info = get_top_transactions(history_period)
 
     # Получение курсов валют
-    currencies_info = get_currency_rates(user_data.get('user_currencies'))
+    currencies_info = get_currency_rates(user_data.get("user_currencies"))
 
     # Получение курса акций
-    stocks_info = get_stock_prices(user_data.get('user_stocks'))
+    stocks_info = get_stock_prices(user_data.get("user_stocks"))
 
     view_dict = {
         "greeting": welcome_words,
@@ -70,9 +73,9 @@ def main_view(transaction_data: DataFrame, user_data: dict[str, Any], period_end
         "stock_prices": stocks_info,
     }
 
-    views_main_logger.info(f"Конец работы веб-страницы 'Главная'")
+    views_main_logger.info("Конец работы веб-страницы 'Главная'")
     json_string = json.dumps(view_dict, ensure_ascii=False, indent=4)
-    views_main_logger.info(f"Вывод JSON.")
+    views_main_logger.info("Вывод JSON.")
 
     return json_string
 
@@ -94,6 +97,7 @@ views_main_logger = create_logger("views_main_logger", "views_main")
 # Y — год, на который приходится дата;
 # ALL — все данные до указанной даты.
 
+
 def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_end: str, range_type: str = "M") -> str:
     """
     Возвращает информацию по общим тратам, по категориям, информацию о поступлениях по категориям, курс валют,
@@ -106,7 +110,7 @@ def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_en
 
     Returns: Словарь с информацией.
     """
-    views_event_logger.info(f"Начата работа веб-страницы 'События'.")
+    views_event_logger.info("Начата работа веб-страницы 'События'.")
     # Получение списка транзакицй по условию даты
     history_period = get_transaction_history_ranged(transaction_data, period_end, range_type)
     views_event_logger.info(f"Полученый список транзакций состоит из {len(history_period)} записей.")
@@ -130,11 +134,10 @@ def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_en
     income_categories = get_income_categories(history_period, ["Пополнения", "Бонусы"])
 
     # Получение курсов валют
-    currencies_info = get_currency_rates(user_data.get('user_currencies'))
+    currencies_info = get_currency_rates(user_data.get("user_currencies"))
 
     # Получение курса акций
-    stocks_info = get_stock_prices(user_data.get('user_stocks'))
-
+    stocks_info = get_stock_prices(user_data.get("user_stocks"))
 
     event_dict = {
         "expenses": {
@@ -150,11 +153,12 @@ def main_event(transaction_data: DataFrame, user_data: dict[str, Any], period_en
         "stock_prices": stocks_info,
     }
 
-    views_event_logger.info(f"Конец работы веб-страницы 'События'")
+    views_event_logger.info("Конец работы веб-страницы 'События'")
     json_string = json.dumps(event_dict, ensure_ascii=False, indent=4)
-    views_event_logger.info(f"Вывод JSON.")
+    views_event_logger.info("Вывод JSON.")
 
     return json_string
+
 
 # Раскоментировать для тестового запуска следующие 5 строчек
 views_event_logger = create_logger("views_event_logger", "views_event")
